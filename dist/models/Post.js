@@ -1,14 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Post = void 0;
+exports.Post = exports.categories = void 0;
 const mongoose_1 = require("mongoose");
+exports.categories = ['javascript', 'html', 'css', 'other'];
 const PostSchema = new mongoose_1.Schema({
-    author: { type: mongoose_1.Schema.Types.ObjectId, rel: 'Author', required: true },
+    author: { type: mongoose_1.Schema.Types.Mixed, rel: 'Author', required: true },
+    title: { type: String, required: true },
     timestamp: { type: Date, required: true },
     category: {
         type: String,
         required: true,
-        enum: ['javascript', 'html', 'css', 'other'],
+        enum: exports.categories,
         default: 'other',
     },
     text: { type: [String], required: true },

@@ -6,7 +6,7 @@ type AuthorModel = {
 };
 
 const AuthorModel = new Schema<AuthorModel>({
-    name: { type: String, required: true },
+    name: { type: String, unique: true, required: true },
 });
 
 export const Author = model<AuthorModel>('author', AuthorModel);

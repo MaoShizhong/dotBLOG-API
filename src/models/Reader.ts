@@ -7,7 +7,7 @@ type ReaderModel = {
 };
 
 const ReaderSchema = new Schema<ReaderModel>({
-    username: { type: String, required: true },
+    username: { type: String, unique: true, required: true },
 });
 
 ReaderSchema.virtual('url').get(function (): string {

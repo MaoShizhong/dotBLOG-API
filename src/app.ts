@@ -1,4 +1,5 @@
-import express from 'express';
+import express, { RequestHandler } from 'express';
+import { ValidationChain } from 'express-validator';
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';
 import compression from 'compression';
@@ -16,6 +17,8 @@ declare global {
     interface Error {
         status?: number;
     }
+
+    type FormPOSTHandler = Array<ValidationChain | RequestHandler>;
 }
 
 const app = express();

@@ -6,9 +6,12 @@ type ReaderModel = {
     url: string;
 };
 
-const ReaderSchema = new Schema<ReaderModel>({
-    username: { type: String, unique: true, required: true },
-});
+const ReaderSchema = new Schema<ReaderModel>(
+    {
+        username: { type: String, unique: true, required: true },
+    },
+    { versionKey: false }
+);
 
 ReaderSchema.virtual('url').get(function (): string {
     return `/users/${this._id}`;

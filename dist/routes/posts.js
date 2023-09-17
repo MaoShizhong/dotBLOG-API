@@ -27,16 +27,8 @@ exports.postsRouter = void 0;
 const express_1 = require("express");
 const postsController = __importStar(require("../controllers/posts_controller"));
 exports.postsRouter = (0, express_1.Router)();
-exports.postsRouter.get('/', (req, res) => {
-    res.json({ message: 'posts get' });
-});
-exports.postsRouter.get('/:postID', (req, res) => {
-    res.json({ message: `individual post get ID: ${req.params.postID}` });
-});
-exports.postsRouter.post('/', postsController.postNewArticle);
-exports.postsRouter.put('/', (req, res) => {
-    res.json({ message: 'posts put' });
-});
-exports.postsRouter.delete('/', (req, res) => {
-    res.json({ message: 'posts delete' });
-});
+exports.postsRouter.get('/', postsController.getAllPosts);
+exports.postsRouter.get('/:postID', postsController.getSpecificPost);
+exports.postsRouter.post('/', postsController.postNewPost);
+exports.postsRouter.put('/:postID', postsController.editPost);
+exports.postsRouter.delete('/:postID', postsController.deletePost);

@@ -5,8 +5,11 @@ type AuthorModel = {
     name: string;
 };
 
-const AuthorModel = new Schema<AuthorModel>({
-    name: { type: String, unique: true, required: true },
-});
+const AuthorModel = new Schema<AuthorModel>(
+    {
+        name: { type: String, unique: true, required: true },
+    },
+    { versionKey: false }
+);
 
 export const Author = model<AuthorModel>('author', AuthorModel);

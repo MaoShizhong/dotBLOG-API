@@ -4,7 +4,7 @@ exports.Reader = void 0;
 const mongoose_1 = require("mongoose");
 const ReaderSchema = new mongoose_1.Schema({
     username: { type: String, unique: true, required: true },
-});
+}, { versionKey: false });
 ReaderSchema.virtual('url').get(function () {
     return `/users/${this._id}`;
 });

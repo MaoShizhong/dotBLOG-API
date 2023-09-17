@@ -14,8 +14,8 @@ const PostSchema = new mongoose_1.Schema({
         default: 'other',
     },
     text: { type: [String], required: true },
-    published: { type: Boolean, required: true },
-});
+    isPublished: { type: Boolean, required: true },
+}, { versionKey: false });
 PostSchema.virtual('url').get(function () {
     return `/authors/${this._id}`;
 });

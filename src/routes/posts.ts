@@ -1,22 +1,14 @@
-import { Request, Response, Router } from 'express';
+import { Router } from 'express';
 import * as postsController from '../controllers/posts_controller';
 
 export const postsRouter = Router();
 
-postsRouter.get('/', (req: Request, res: Response): void => {
-    res.json({ message: 'posts get' });
-});
+postsRouter.get('/', postsController.getAllPosts);
 
-postsRouter.get('/:postID', (req: Request, res: Response): void => {
-    res.json({ message: `individual post get ID: ${req.params.postID}` });
-});
+postsRouter.get('/:postID', postsController.getSpecificPost);
 
-postsRouter.post('/', postsController.postNewArticle);
+postsRouter.post('/', postsController.postNewPost);
 
-postsRouter.put('/', (req: Request, res: Response): void => {
-    res.json({ message: 'posts put' });
-});
+postsRouter.put('/:postID', postsController.editPost);
 
-postsRouter.delete('/', (req: Request, res: Response): void => {
-    res.json({ message: 'posts delete' });
-});
+postsRouter.delete('/:postID', postsController.deletePost);

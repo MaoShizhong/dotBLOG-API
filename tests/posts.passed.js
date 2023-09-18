@@ -114,7 +114,7 @@ describe.skip('Test GET routes for "/posts" endpoints', () => {
     it('Should return null if the searched postID (valid ObjectID) is not in the collection', async () => {
         expect(await getSpecificPost('650694ce8d33ac7cc559e26e')).toHaveProperty(
             'message',
-            'No post with that ID'
+            'Failed to fetch - no resource with that ID'
         );
         expect(await getSpecificPost('650694ce8d33ac7cc559e26f')).toHaveProperty('status', 404);
     });
@@ -245,17 +245,6 @@ describe.skip('Test PUT routes for "/posts/:postID" endpoint', () => {
         );
     }
 
-    test('Sets base document data for subsequent PUT tests', async () => {
-        expect(await setBaseDocumentData()).toMatchObject({
-            author: 'Mao',
-            title: 'Latest post',
-            timestamp: new Date('2023-09-17T05:55:26.273+00:00'),
-            category: 'javascript',
-            text: ['Test', 'post', 'on', 'javascript category'],
-            isPublished: false,
-        });
-    });
-
     test('Collection starts off containing only 2 documents', async () => {
         expect(await getAllPosts()).toHaveLength(2);
     });
@@ -279,5 +268,22 @@ describe.skip('Test PUT routes for "/posts/:postID" endpoint', () => {
 
     it('Should maintain document count in collection upon successful edit', async () => {
         expect(await getAllPosts()).toHaveLength(2);
+    });
+
+    it('Resets to base document data after PUT tests', async () => {
+        expect(await setBaseDocumentData()).toMatchObject({
+            author: 'Mao',
+            title: 'Latest post',
+            timestamp: new Date('2023-09-17T05:55:26.273+00:00'),
+            category: 'javascript',
+            text: ['Test', 'post', 'on', 'javascript category'],
+            isPublished: false,
+        });
+    });
+});
+
+['SIGINT', 'exit'].forEach((exitEvent) => {
+    process.on(exitEvent, () => {
+        mongoose.connection.close();
     });
 });

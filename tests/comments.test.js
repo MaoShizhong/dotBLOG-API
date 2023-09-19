@@ -1,18 +1,7 @@
-// Connect to MongoDB
 require('dotenv').config();
-const mongoose = require('mongoose');
-const { Comment } = require('../dist/models/Comment');
-const { Reader } = require('../dist/models/Reader');
 const { INVALID_ID, DOES_NOT_EXIST } = require('../dist/controllers/posts_controller');
-const { beforeAll } = require('@jest/globals');
 
 const localhost = `http://localhost:${process.env.PORT || 3000}`;
-
-// initialise and create 3 test comments and 2 test readers
-beforeAll(initialiseTestDocuments);
-
-// clean up test documents and automatically close mongoose connection
-afterAll(deleteTestDocuments);
 
 describe('Test GET routes for handling comments', () => {
     async function getAllCommentsOnPost(postID) {
@@ -68,11 +57,14 @@ describe('Test GET routes for handling comments', () => {
     });
 
     it('Returns null if the searched postID is not in the collection', async () => {
-        expect(await getSpecificComment('650694ce2d33ac7cc559e16e')).toHaveProperty(
+        await expect(getSpecificComment('650694ce2d33ac7cc559e16e')).resolves.toHaveProperty(
             'message',
             'Failed to fetch - no resource with that ID'
         );
-        expect(await getSpecificComment('650694ce2d33ac7cc559e16f')).toHaveProperty('status', 404);
+        await expect(getSpecificComment('650694ce2d33ac7cc559e16f')).resolves.toHaveProperty(
+            'status',
+            404
+        );
     });
 });
 
@@ -103,11 +95,7 @@ describe('Test POST route for handling comments', () => {
     // also deletes the comment just added for re-testability
     async function getAllCommentsOnPost(postID) {
         const res = await fetch(`${localhost}/posts/${postID}/comments`);
-        const length = (await res.json()).length;
-
-        // clean up comment for re-testability
-        await Comment.findOneAndDelete({ text: { $all: ['test', 'test2'] } }).exec();
-        return length;
+        return await res.json();
     }
 
     const commentWithNoText = { text: '' };
@@ -115,7 +103,7 @@ describe('Test POST route for handling comments', () => {
     const validComment = { text: 'test\n\rtest2\n\n\n\n' };
 
     test('Post-to-be-commented-on starts with only 1 comment on it', async () => {
-        expect(await getAllCommentsOnPost('65068b879df45e6e50921c78')).toBe(1);
+        await expect(getAllCommentsOnPost('65068b879df45e6e50921c78')).resolves.toHaveLength(1);
     });
 
     it('Rejects and shows errors upon submitting a new comment with no text', async () => {
@@ -132,7 +120,7 @@ describe('Test POST route for handling comments', () => {
     });
 
     test('Commented-on post now has an additional comment on it', async () => {
-        expect(await getAllCommentsOnPost('65068b879df45e6e50921c78')).toBe(2);
+        await expect(getAllCommentsOnPost('65068b879df45e6e50921c78')).resolves.toHaveLength(2);
     });
 });
 
@@ -168,8 +156,8 @@ describe('Test PUT routes for handling comments', () => {
         text: '\n\r\n\n\n\r\nedited\n\n\n\nedited\r\nedited\nedited\n\n\n\n\n',
     };
 
-    test('Post which the comment-to-edit is on only has 1 comment on it', async () => {
-        await expect(getAllCommentsOnPost('65068b879df45e6e50921c78')).resolves.toHaveLength(1);
+    test('Post which the comment-to-edit is on has 2 comments on it', async () => {
+        await expect(getAllCommentsOnPost('65068b879df45e6e50921c78')).resolves.toHaveLength(2);
     });
 
     it("Edits the only comment on the previous test's post with new text'", async () => {
@@ -195,8 +183,8 @@ describe('Test PUT routes for handling comments', () => {
         await expect(editComment('foobar', editedText)).resolves.toMatchObject(INVALID_ID);
     });
 
-    it('Maintains a count of only 1 comment on the test post', async () => {
-        await expect(getAllCommentsOnPost('65068b879df45e6e50921c78')).resolves.toHaveLength(1);
+    it('Maintains a count of 2 comments on the test post', async () => {
+        await expect(getAllCommentsOnPost('65068b879df45e6e50921c78')).resolves.toHaveLength(2);
     });
 });
 
@@ -250,78 +238,3 @@ describe('Test DELETE routes for handling comments', () => {
         await expect(getAllCommentsOnPost('650694ce8d33ac7cc559e27e')).resolves.toHaveLength(1);
     });
 });
-
-async function initialiseTestDocuments() {
-    try {
-        await mongoose.connect(process.env.CONNECTION_STRING);
-
-        const comment_postA_readerA = new Comment({
-            _id: '650884f8d099ae8404f13ffc',
-            post: '65068b879df45e6e50921c78',
-            commenter: '650884f8d099ae8404f13ffb',
-            timestamp: Date.now(),
-            text: ['AA1', 'AA2'],
-        });
-
-        // To prevent same-millisecond timestamps being generated
-        await new Promise((resolve) => setTimeout(resolve, 5));
-
-        const comment_postB_readerA = new Comment({
-            _id: '650884f8d099ae8404f13ffd',
-            post: '650694ce8d33ac7cc559e27e',
-            commenter: '650884f8d099ae8404f13ffb',
-            timestamp: Date.now(),
-            text: ['BA1', 'BA2'],
-        });
-
-        await new Promise((resolve) => setTimeout(resolve, 5));
-
-        const comment_postB_readerB = new Comment({
-            _id: '650884f8d099ae8404f13ffe',
-            post: '650694ce8d33ac7cc559e27e',
-            commenter: '65089c3cd099ae8404f14052',
-            timestamp: Date.now(),
-            text: ['BB1', 'BB2'],
-        });
-
-        const readerA = new Reader({
-            _id: '650884f8d099ae8404f13ffb',
-            username: 'A',
-        });
-
-        const readerB = new Reader({
-            _id: '65089c3cd099ae8404f14052',
-            username: 'B',
-        });
-
-        await Promise.all([
-            comment_postA_readerA.save(),
-            comment_postB_readerA.save(),
-            comment_postB_readerB.save(),
-            readerA.save(),
-            readerB.save(),
-        ]);
-    } catch (err) {
-        console.log(err);
-        return;
-    }
-}
-
-async function deleteTestDocuments() {
-    await Promise.all([
-        Comment.deleteMany({
-            _id: {
-                $in: [
-                    '650884f8d099ae8404f13ffc',
-                    '650884f8d099ae8404f13ffd',
-                    '650884f8d099ae8404f13ffe',
-                ],
-            },
-        }).exec(),
-        Reader.deleteMany({
-            _id: { $in: ['650884f8d099ae8404f13ffb', '65089c3cd099ae8404f14052'] },
-        }),
-    ]);
-
-    mongoose.connection.close();
-}

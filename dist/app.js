@@ -19,11 +19,7 @@ const compression_1 = __importDefault(require("compression"));
 const helmet_1 = __importDefault(require("helmet"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const dotenv_1 = require("dotenv");
-const index_1 = require("./routes/index");
-const author_1 = require("./routes/author");
-const posts_1 = require("./routes/posts");
-const comments_1 = require("./routes/comments");
-const readers_1 = require("./routes/readers");
+const router_1 = require("./routes/router");
 const app = (0, express_1.default)();
 (0, dotenv_1.configDotenv)();
 /*
@@ -41,12 +37,16 @@ app.use(express_1.default.urlencoded({ extended: false }));
 app.use((0, cookie_parser_1.default)());
 app.use((0, compression_1.default)());
 app.use((0, helmet_1.default)());
-app.use('/', index_1.indexRouter);
-app.use('/author', author_1.authorRouter);
-app.use('/posts', posts_1.postsRouter);
-app.use('/comments', comments_1.commentsRouter);
-app.use('/readers', readers_1.readersRouter);
+app.use('/', router_1.router);
 /*
     - Listen
 */
 app.listen(process.env.PORT || '3000');
+/*
+    - Close MongoDB connection on program exit
+*/
+['SIGINT', 'exit'].forEach((exitEvent) => {
+    process.on(exitEvent, () => {
+        mongoose_1.default.connection.close();
+    });
+});

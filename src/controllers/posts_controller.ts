@@ -9,13 +9,18 @@ type ErrorMessage = {
     status: number;
 };
 
-const INVALID_ID: ErrorMessage = { message: 'Failed to fetch - invalid ID format', status: 400 };
-const DOES_NOT_EXIST: ErrorMessage = {
-    message: 'Failed to fetch - no post with that ID',
+export const INVALID_ID: ErrorMessage = {
+    message: 'Failed to fetch - invalid ID format',
+    status: 400,
+};
+export const DOES_NOT_EXIST: ErrorMessage = {
+    message: 'Failed to fetch - no resource with that ID',
     status: 404,
 };
 
-// GET ALL POSTS
+/*
+    - GET
+*/
 export const getAllPosts = expressAsyncHandler(
     async (req: Request, res: Response): Promise<void> => {
         // Show newest posts first
@@ -43,7 +48,9 @@ export const getSpecificPost = expressAsyncHandler(
     }
 );
 
-// POST REQUEST
+/*
+    - POST
+*/
 export const postNewPost: FormPOSTHandler = [
     body('title', 'Title must not be empty').trim().notEmpty().escape(),
 
@@ -53,10 +60,7 @@ export const postNewPost: FormPOSTHandler = [
         .trim()
         .notEmpty()
         .escape()
-        .customSanitizer((text: string): string[] =>
-            // Convert text into array of paragraphs
-            text.replaceAll('\r', '').replaceAll(/\n+/g, '\n').split('\n')
-        ),
+        .customSanitizer(convertToArrayOfParagraphs),
 
     // Selection will be converted into a boolean, with the default value being false unless the
     // 'yes' option was selected specifically
@@ -90,25 +94,9 @@ export const postNewPost: FormPOSTHandler = [
     }),
 ];
 
-// DELETE INDIVIDUAL POST
-export const deletePost = expressAsyncHandler(
-    async (req: Request, res: Response): Promise<void> => {
-        if (!Types.ObjectId.isValid(req.params.postID)) {
-            res.status(400).json(INVALID_ID);
-            return;
-        }
-
-        const deletedPost = await Post.findByIdAndDelete(req.params.postID).exec();
-
-        if (!deletedPost) {
-            res.status(404).json(DOES_NOT_EXIST);
-        } else {
-            res.json(deletedPost);
-        }
-    }
-);
-
-// PUT - EDIT INDIVIDUAL POST
+/*
+    - PUT
+*/
 export const editPost: FormPOSTHandler = [
     body('title', 'Title must not be empty').optional().trim().notEmpty().escape(),
 
@@ -155,7 +143,7 @@ export const editPost: FormPOSTHandler = [
                 res.status(404).json(DOES_NOT_EXIST);
             } else {
                 // Only create and store a new post if no errors
-                const editedPost = new Post<PostModel>({
+                const postWithEdits = new Post<PostModel>({
                     _id: existingPost._id,
                     author: existingPost.author,
                     title: req.body.title ?? existingPost.title,
@@ -165,9 +153,37 @@ export const editPost: FormPOSTHandler = [
                     isPublished: req.body.isPublished ?? existingPost.isPublished,
                 });
 
-                await Post.findByIdAndUpdate(req.params.postID, editedPost, {});
+                const editedPost = await Post.findByIdAndUpdate(req.params.postID, postWithEdits, {
+                    new: true,
+                });
+
                 res.json(editedPost);
             }
         }
     }),
 ];
+
+/*
+    - DELETE
+*/
+export const deletePost = expressAsyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
+        if (!Types.ObjectId.isValid(req.params.postID)) {
+            res.status(400).json(INVALID_ID);
+            return;
+        }
+
+        const deletedPost = await Post.findByIdAndDelete(req.params.postID).exec();
+
+        if (!deletedPost) {
+            res.status(404).json(DOES_NOT_EXIST);
+        } else {
+            res.json(deletedPost);
+        }
+    }
+);
+
+export function convertToArrayOfParagraphs(text: string): string[] {
+    // Convert text into array of paragraphs
+    return text.replaceAll('\r', '').replaceAll(/\n+/g, '\n').split('\n');
+}

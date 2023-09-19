@@ -23,12 +23,28 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.postsRouter = void 0;
+exports.router = void 0;
 const express_1 = require("express");
 const postsController = __importStar(require("../controllers/posts_controller"));
-exports.postsRouter = (0, express_1.Router)();
-exports.postsRouter.get('/', postsController.getAllPosts);
-exports.postsRouter.get('/:postID', postsController.getSpecificPost);
-exports.postsRouter.post('/', postsController.postNewPost);
-exports.postsRouter.put('/:postID', postsController.editPost);
-exports.postsRouter.delete('/:postID', postsController.deletePost);
+const commentsController = __importStar(require("../controllers/comments_controller"));
+exports.router = (0, express_1.Router)();
+/*
+    - Handle posts
+*/
+exports.router.get('/posts/', postsController.getAllPosts);
+exports.router.get('/posts/:postID', postsController.getSpecificPost);
+exports.router.post('/posts/', postsController.postNewPost);
+exports.router.put('/posts/:postID', postsController.editPost);
+exports.router.delete('/posts/:postID', postsController.deletePost);
+/*
+    - Handle comments
+*/
+exports.router.get('/posts/:postID/comments', commentsController.getAllComments);
+exports.router.get('/readers/:readerID/comments', commentsController.getAllComments);
+exports.router.post('/posts/:postID/comments', commentsController.postNewComment);
+exports.router.get('/comments/:commentID', commentsController.getSpecificComment);
+exports.router.put('/comments/:commentID', commentsController.editComment);
+exports.router.delete('/comments/:commentID', commentsController.deleteComment);
+/*
+    - Handle readers
+*/

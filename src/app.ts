@@ -7,11 +7,7 @@ import helmet from 'helmet';
 import mongoose from 'mongoose';
 import { configDotenv } from 'dotenv';
 
-import { indexRouter } from './routes/index';
-import { authorRouter } from './routes/author';
-import { postsRouter } from './routes/posts';
-import { commentsRouter } from './routes/comments';
-import { readersRouter } from './routes/readers';
+import { router } from './routes/router';
 
 declare global {
     interface Error {
@@ -42,13 +38,18 @@ app.use(cookieParser());
 app.use(compression());
 app.use(helmet());
 
-app.use('/', indexRouter);
-app.use('/author', authorRouter);
-app.use('/posts', postsRouter);
-app.use('/comments', commentsRouter);
-app.use('/readers', readersRouter);
+app.use('/', router);
 
 /*
     - Listen
 */
 app.listen(process.env.PORT || '3000');
+
+/*
+    - Close MongoDB connection on program exit
+*/
+['SIGINT', 'exit'].forEach((exitEvent): void => {
+    process.on(exitEvent, (): void => {
+        mongoose.connection.close();
+    });
+});

@@ -1,7 +1,7 @@
 import { Schema, Types, model } from 'mongoose';
 
 type ReaderModel = {
-    _id: Types.ObjectId;
+    _id?: Types.ObjectId;
     username: string;
     url: string;
 };

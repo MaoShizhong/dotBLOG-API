@@ -1,7 +1,8 @@
 import { Schema, Types, model } from 'mongoose';
 
-type CommentModel = {
-    _id: Types.ObjectId;
+export type CommentModel = {
+    _id?: Types.ObjectId;
+    post: Types.ObjectId;
     commenter: Types.ObjectId;
     timestamp: Date;
     text: string[];
@@ -9,6 +10,7 @@ type CommentModel = {
 
 const CommentSchema = new Schema<CommentModel>(
     {
+        post: { type: Schema.Types.ObjectId, rel: 'Post', required: true },
         commenter: { type: Schema.Types.ObjectId, rel: 'Reader', required: true },
         timestamp: { type: Date, required: true },
         text: { type: [String], required: true },

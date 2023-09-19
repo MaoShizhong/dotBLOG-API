@@ -1,7 +1,7 @@
 import { Schema, Types, model } from 'mongoose';
 
 type AuthorModel = {
-    _id: Types.ObjectId;
+    _id?: Types.ObjectId;
     name: string;
 };
 

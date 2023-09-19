@@ -12,17 +12,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.editPost = exports.deletePost = exports.postNewPost = exports.getSpecificPost = exports.getAllPosts = void 0;
+exports.convertToArrayOfParagraphs = exports.deletePost = exports.editPost = exports.postNewPost = exports.getSpecificPost = exports.getAllPosts = exports.DOES_NOT_EXIST = exports.INVALID_ID = void 0;
 const express_validator_1 = require("express-validator");
 const Post_1 = require("../models/Post");
 const express_async_handler_1 = __importDefault(require("express-async-handler"));
 const mongoose_1 = require("mongoose");
-const INVALID_ID = { message: 'Failed to fetch - invalid ID format', status: 400 };
-const DOES_NOT_EXIST = {
-    message: 'Failed to fetch - no post with that ID',
+exports.INVALID_ID = {
+    message: 'Failed to fetch - invalid ID format',
+    status: 400,
+};
+exports.DOES_NOT_EXIST = {
+    message: 'Failed to fetch - no resource with that ID',
     status: 404,
 };
-// GET ALL POSTS
+/*
+    - GET
+*/
 exports.getAllPosts = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     // Show newest posts first
     const posts = yield Post_1.Post.find().sort({ timestamp: -1 }).exec();
@@ -31,18 +36,20 @@ exports.getAllPosts = (0, express_async_handler_1.default)((req, res) => __await
 // GET INDIVIDUAL POST
 exports.getSpecificPost = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     if (!mongoose_1.Types.ObjectId.isValid(req.params.postID)) {
-        res.status(400).json(INVALID_ID);
+        res.status(400).json(exports.INVALID_ID);
         return;
     }
     const post = yield Post_1.Post.findById(req.params.postID).exec();
     if (!post) {
-        res.status(404).json(DOES_NOT_EXIST);
+        res.status(404).json(exports.DOES_NOT_EXIST);
     }
     else {
         res.json(post);
     }
 }));
-// POST REQUEST
+/*
+    - POST
+*/
 exports.postNewPost = [
     (0, express_validator_1.body)('title', 'Title must not be empty').trim().notEmpty().escape(),
     (0, express_validator_1.body)('category', 'Category must be one of the listed options').toLowerCase().isIn(Post_1.categories),
@@ -50,9 +57,7 @@ exports.postNewPost = [
         .trim()
         .notEmpty()
         .escape()
-        .customSanitizer((text) => 
-    // Convert text into array of paragraphs
-    text.replaceAll('\r', '').replaceAll(/\n+/g, '\n').split('\n')),
+        .customSanitizer(convertToArrayOfParagraphs),
     // Selection will be converted into a boolean, with the default value being false unless the
     // 'yes' option was selected specifically
     (0, express_validator_1.body)('isPublished')
@@ -82,21 +87,9 @@ exports.postNewPost = [
         }
     })),
 ];
-// DELETE INDIVIDUAL POST
-exports.deletePost = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    if (!mongoose_1.Types.ObjectId.isValid(req.params.postID)) {
-        res.status(400).json(INVALID_ID);
-        return;
-    }
-    const deletedPost = yield Post_1.Post.findByIdAndDelete(req.params.postID).exec();
-    if (!deletedPost) {
-        res.status(404).json(DOES_NOT_EXIST);
-    }
-    else {
-        res.json(deletedPost);
-    }
-}));
-// PUT - EDIT INDIVIDUAL POST
+/*
+    - PUT
+*/
 exports.editPost = [
     (0, express_validator_1.body)('title', 'Title must not be empty').optional().trim().notEmpty().escape(),
     (0, express_validator_1.body)('category', 'Category must be one of the listed options')
@@ -122,7 +115,7 @@ exports.editPost = [
     (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
         var _a, _b, _c, _d;
         if (!mongoose_1.Types.ObjectId.isValid(req.params.postID)) {
-            res.status(400).json(INVALID_ID);
+            res.status(400).json(exports.INVALID_ID);
             return;
         }
         const errors = (0, express_validator_1.validationResult)(req);
@@ -134,11 +127,11 @@ exports.editPost = [
         else {
             const existingPost = yield Post_1.Post.findById(req.params.postID).exec();
             if (!existingPost) {
-                res.status(404).json(DOES_NOT_EXIST);
+                res.status(404).json(exports.DOES_NOT_EXIST);
             }
             else {
                 // Only create and store a new post if no errors
-                const editedPost = new Post_1.Post({
+                const postWithEdits = new Post_1.Post({
                     _id: existingPost._id,
                     author: existingPost.author,
                     title: (_a = req.body.title) !== null && _a !== void 0 ? _a : existingPost.title,
@@ -147,9 +140,32 @@ exports.editPost = [
                     text: (_c = req.body.text) !== null && _c !== void 0 ? _c : existingPost.text,
                     isPublished: (_d = req.body.isPublished) !== null && _d !== void 0 ? _d : existingPost.isPublished,
                 });
-                yield Post_1.Post.findByIdAndUpdate(req.params.postID, editedPost, {});
+                const editedPost = yield Post_1.Post.findByIdAndUpdate(req.params.postID, postWithEdits, {
+                    new: true,
+                });
                 res.json(editedPost);
             }
         }
     })),
 ];
+/*
+    - DELETE
+*/
+exports.deletePost = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!mongoose_1.Types.ObjectId.isValid(req.params.postID)) {
+        res.status(400).json(exports.INVALID_ID);
+        return;
+    }
+    const deletedPost = yield Post_1.Post.findByIdAndDelete(req.params.postID).exec();
+    if (!deletedPost) {
+        res.status(404).json(exports.DOES_NOT_EXIST);
+    }
+    else {
+        res.json(deletedPost);
+    }
+}));
+function convertToArrayOfParagraphs(text) {
+    // Convert text into array of paragraphs
+    return text.replaceAll('\r', '').replaceAll(/\n+/g, '\n').split('\n');
+}
+exports.convertToArrayOfParagraphs = convertToArrayOfParagraphs;

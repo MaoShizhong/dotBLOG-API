@@ -13,6 +13,10 @@ export const INVALID_ID: ErrorMessage = {
     message: 'Failed to fetch - invalid ID format',
     status: 400,
 };
+export const INVALID_QUERY: ErrorMessage = {
+    message: 'Failed to fetch - invalid query',
+    status: 400,
+};
 export const DOES_NOT_EXIST: ErrorMessage = {
     message: 'Failed to fetch - no resource with that ID',
     status: 404,
@@ -80,7 +84,8 @@ export const postNewPost: FormPOSTHandler = [
         } else {
             // Only create and store a new post if no errors
             const post = new Post<PostModel>({
-                author: 'Mao', // TODO: to be replaced once JWT auth implemented
+                // TODO: to be replaced once JWT auth implemented
+                author: new Types.ObjectId('65068c32be2fd5ade9800662'),
                 title: req.body.title as string,
                 timestamp: new Date(),
                 category: req.body.category as Category,
@@ -162,6 +167,37 @@ export const editPost: FormPOSTHandler = [
         }
     }),
 ];
+
+/*
+    - PATCH
+*/
+export const publishPost = expressAsyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
+        if (
+            !Types.ObjectId.isValid(req.params.postID) ||
+            !['true', 'false'].includes(req.query.publish as string)
+        ) {
+            const message = !Types.ObjectId.isValid(req.params.postID) ? INVALID_ID : INVALID_QUERY;
+
+            res.status(400).json(message);
+            return;
+        }
+
+        const newPublishedStatus = req.query.publish === 'true';
+
+        const editedPost = await Post.findByIdAndUpdate(
+            req.params.postID,
+            { isPublished: newPublishedStatus },
+            { new: true }
+        ).exec();
+
+        if (!editedPost) {
+            res.status(404).json(DOES_NOT_EXIST);
+        } else {
+            res.json(editedPost);
+        }
+    }
+);
 
 /*
     - DELETE

@@ -6,7 +6,7 @@ export type Category = (typeof categories)[number];
 
 export type PostModel = {
     _id?: Types.ObjectId;
-    author: Types.ObjectId | string;
+    author: Types.ObjectId;
     title: string;
     timestamp: Date;
     category: Category;

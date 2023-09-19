@@ -15,6 +15,9 @@ router.post('/posts/', postsController.postNewPost);
 
 router.put('/posts/:postID', postsController.editPost);
 
+// For setting an unpublished post to published only
+router.patch('/posts/:postID', postsController.publishPost);
+
 router.delete('/posts/:postID', postsController.deletePost);
 
 /*

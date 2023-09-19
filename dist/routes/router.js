@@ -35,6 +35,8 @@ exports.router.get('/posts/', postsController.getAllPosts);
 exports.router.get('/posts/:postID', postsController.getSpecificPost);
 exports.router.post('/posts/', postsController.postNewPost);
 exports.router.put('/posts/:postID', postsController.editPost);
+// For setting an unpublished post to published only
+exports.router.patch('/posts/:postID', postsController.publishPost);
 exports.router.delete('/posts/:postID', postsController.deletePost);
 /*
     - Handle comments

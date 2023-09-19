@@ -12,13 +12,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.convertToArrayOfParagraphs = exports.deletePost = exports.editPost = exports.postNewPost = exports.getSpecificPost = exports.getAllPosts = exports.DOES_NOT_EXIST = exports.INVALID_ID = void 0;
+exports.convertToArrayOfParagraphs = exports.deletePost = exports.publishPost = exports.editPost = exports.postNewPost = exports.getSpecificPost = exports.getAllPosts = exports.DOES_NOT_EXIST = exports.INVALID_QUERY = exports.INVALID_ID = void 0;
 const express_validator_1 = require("express-validator");
 const Post_1 = require("../models/Post");
 const express_async_handler_1 = __importDefault(require("express-async-handler"));
 const mongoose_1 = require("mongoose");
 exports.INVALID_ID = {
     message: 'Failed to fetch - invalid ID format',
+    status: 400,
+};
+exports.INVALID_QUERY = {
+    message: 'Failed to fetch - invalid query',
     status: 400,
 };
 exports.DOES_NOT_EXIST = {
@@ -75,7 +79,8 @@ exports.postNewPost = [
         else {
             // Only create and store a new post if no errors
             const post = new Post_1.Post({
-                author: 'Mao',
+                // TODO: to be replaced once JWT auth implemented
+                author: new mongoose_1.Types.ObjectId('65068c32be2fd5ade9800662'),
                 title: req.body.title,
                 timestamp: new Date(),
                 category: req.body.category,
@@ -148,6 +153,25 @@ exports.editPost = [
         }
     })),
 ];
+/*
+    - PATCH
+*/
+exports.publishPost = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!mongoose_1.Types.ObjectId.isValid(req.params.postID) ||
+        !['true', 'false'].includes(req.query.publish)) {
+        const message = !mongoose_1.Types.ObjectId.isValid(req.params.postID) ? exports.INVALID_ID : exports.INVALID_QUERY;
+        res.status(400).json(message);
+        return;
+    }
+    const newPublishedStatus = req.query.publish === 'true';
+    const editedPost = yield Post_1.Post.findByIdAndUpdate(req.params.postID, { isPublished: newPublishedStatus }, { new: true }).exec();
+    if (!editedPost) {
+        res.status(404).json(exports.DOES_NOT_EXIST);
+    }
+    else {
+        res.json(editedPost);
+    }
+}));
 /*
     - DELETE
 */

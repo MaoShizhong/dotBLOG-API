@@ -88,7 +88,7 @@ exports.postNewComment = [
                 text: req.body.text,
             });
             yield comment.save();
-            res.json(comment);
+            res.status(201).json(comment);
         }
     })),
 ];
@@ -144,6 +144,6 @@ exports.deleteComment = (0, express_async_handler_1.default)((req, res) => __awa
         res.status(404).json(posts_controller_1.DOES_NOT_EXIST);
     }
     else {
-        res.json(deletedComment);
+        res.status(204).json(deletedComment);
     }
 }));

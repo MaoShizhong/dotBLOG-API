@@ -15,19 +15,28 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const morgan_1 = __importDefault(require("morgan"));
-const compression_1 = __importDefault(require("compression"));
 const helmet_1 = __importDefault(require("helmet"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const dotenv_1 = require("dotenv");
-const router_1 = require("./routes/router");
+const resource_router_1 = require("./routes/resource_router");
+const auth_router_1 = require("./routes/auth_router");
 const app = (0, express_1.default)();
 (0, dotenv_1.configDotenv)();
 /*
     - Mongoose setup
 */
 mongoose_1.default.set('strictQuery', false);
-const main = () => __awaiter(void 0, void 0, void 0, function* () { return yield mongoose_1.default.connect(process.env.CONNECTION_STRING); });
-main().catch((err) => console.error(err));
+function connectToDatabase() {
+    return __awaiter(this, void 0, void 0, function* () {
+        yield mongoose_1.default.connect(process.env.CONNECTION_STRING);
+    });
+}
+try {
+    connectToDatabase();
+}
+catch (error) {
+    console.error(error);
+}
 /*
     - Initialise middleware
 */
@@ -35,9 +44,9 @@ app.use((0, morgan_1.default)('dev'));
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: false }));
 app.use((0, cookie_parser_1.default)());
-app.use((0, compression_1.default)());
 app.use((0, helmet_1.default)());
-app.use('/', router_1.router);
+app.use('/', resource_router_1.resourceRouter);
+app.use('/auth', auth_router_1.authRouter);
 /*
     - Listen
 */

@@ -1,9 +1,8 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const { Author } = require('../dist/models/Author');
 const { Post } = require('../dist/models/Post');
 const { Comment } = require('../dist/models/Comment');
-const { Reader } = require('../dist/models/Reader');
+const { User } = require('../dist/models/User');
 
 module.exports = async () => {
     try {
@@ -35,9 +34,12 @@ module.exports = async () => {
 };
 
 function createTestAuthor() {
-    return new Author({
+    return new User({
         _id: '65068c32be2fd5ade9800662',
         name: 'Mao',
+        username: 'Maomao',
+        password: 'Maomao',
+        isAuthor: true,
     });
 }
 
@@ -105,11 +107,15 @@ function createTestReaders() {
     const readerA = new Reader({
         _id: '650884f8d099ae8404f13ffb',
         username: 'A',
+        password: 'A',
+        isAuthor: false,
     });
 
     const readerB = new Reader({
         _id: '65089c3cd099ae8404f14052',
         username: 'B',
+        password: 'B',
+        isAuthor: false,
     });
 
     return [readerA, readerB];

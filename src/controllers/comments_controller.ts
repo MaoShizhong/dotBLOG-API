@@ -70,7 +70,7 @@ export const postNewComment: FormPOSTHandler = [
             });
 
             await comment.save();
-            res.json(comment);
+            res.status(201).json(comment);
         }
     }),
 ];
@@ -137,7 +137,7 @@ export const deleteComment = expressAsyncHandler(
         if (!deletedComment) {
             res.status(404).json(DOES_NOT_EXIST);
         } else {
-            res.json(deletedComment);
+            res.status(204).json(deletedComment);
         }
     }
 );

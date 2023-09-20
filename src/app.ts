@@ -2,12 +2,12 @@ import express, { RequestHandler } from 'express';
 import { ValidationChain } from 'express-validator';
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';
-import compression from 'compression';
 import helmet from 'helmet';
 import mongoose from 'mongoose';
 import { configDotenv } from 'dotenv';
 
-import { router } from './routes/router';
+import { resourceRouter } from './routes/resource_router';
+import { authRouter } from './routes/auth_router';
 
 declare global {
     interface Error {
@@ -25,8 +25,15 @@ configDotenv();
 */
 mongoose.set('strictQuery', false);
 
-const main = async () => await mongoose.connect(process.env.CONNECTION_STRING!);
-main().catch((err): void => console.error(err));
+async function connectToDatabase(): Promise<void> {
+    await mongoose.connect(process.env.CONNECTION_STRING!);
+}
+
+try {
+    connectToDatabase();
+} catch (error) {
+    console.error(error);
+}
 
 /*
     - Initialise middleware
@@ -35,10 +42,10 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(compression());
 app.use(helmet());
 
-app.use('/', router);
+app.use('/', resourceRouter);
+app.use('/auth', authRouter);
 
 /*
     - Listen

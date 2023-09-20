@@ -11,7 +11,7 @@ export type CommentModel = {
 const CommentSchema = new Schema<CommentModel>(
     {
         post: { type: Schema.Types.ObjectId, rel: 'Post', required: true },
-        commenter: { type: Schema.Types.ObjectId, rel: 'Reader', required: true },
+        commenter: { type: Schema.Types.ObjectId, rel: 'User', required: true },
         timestamp: { type: Date, required: true },
         text: { type: [String], required: true },
     },

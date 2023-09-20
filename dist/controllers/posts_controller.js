@@ -17,6 +17,7 @@ const express_validator_1 = require("express-validator");
 const Post_1 = require("../models/Post");
 const express_async_handler_1 = __importDefault(require("express-async-handler"));
 const mongoose_1 = require("mongoose");
+const User_1 = require("../models/User");
 exports.INVALID_ID = {
     message: 'Failed to fetch - invalid ID format',
     status: 400,
@@ -77,10 +78,17 @@ exports.postNewPost = [
             });
         }
         else {
-            // Only create and store a new post if no errors
+            // Only authorised authors will reach this point
+            const author = yield User_1.User.findOne({
+                username: req.username,
+            }).exec();
+            // Very unlikely safeguard
+            if (!author) {
+                res.status(404).json({ message: 'Author does not exist ' });
+                return;
+            }
             const post = new Post_1.Post({
-                // TODO: to be replaced once JWT auth implemented
-                author: new mongoose_1.Types.ObjectId('65068c32be2fd5ade9800662'),
+                author: new mongoose_1.Types.ObjectId(author._id),
                 title: req.body.title,
                 timestamp: new Date(),
                 category: req.body.category,
@@ -88,7 +96,7 @@ exports.postNewPost = [
                 isPublished: req.body.isPublished,
             });
             yield post.save();
-            res.json(post);
+            res.status(201).json(post);
         }
     })),
 ];
@@ -185,7 +193,7 @@ exports.deletePost = (0, express_async_handler_1.default)((req, res) => __awaite
         res.status(404).json(exports.DOES_NOT_EXIST);
     }
     else {
-        res.json(deletedPost);
+        res.status(204).json(deletedPost);
     }
 }));
 function convertToArrayOfParagraphs(text) {

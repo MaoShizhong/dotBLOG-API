@@ -4,7 +4,7 @@ exports.Post = exports.categories = void 0;
 const mongoose_1 = require("mongoose");
 exports.categories = ['javascript', 'html', 'css', 'other'];
 const PostSchema = new mongoose_1.Schema({
-    author: { type: mongoose_1.Schema.Types.Mixed, rel: 'Author', required: true },
+    author: { type: mongoose_1.Schema.Types.Mixed, rel: 'User', required: true },
     title: { type: String, required: true },
     timestamp: { type: Date, required: true },
     category: {
@@ -17,6 +17,6 @@ const PostSchema = new mongoose_1.Schema({
     isPublished: { type: Boolean, required: true },
 }, { versionKey: false });
 PostSchema.virtual('url').get(function () {
-    return `/authors/${this._id}`;
+    return `/posts/${this._id}`;
 });
 exports.Post = (0, mongoose_1.model)('post', PostSchema);

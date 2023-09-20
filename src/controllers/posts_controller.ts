@@ -3,6 +3,8 @@ import { body, validationResult } from 'express-validator';
 import { categories, Category, Post, PostModel } from '../models/Post';
 import expressAsyncHandler from 'express-async-handler';
 import { Types } from 'mongoose';
+import { User } from '../models/User';
+import { AuthenticatedRequest } from './auth_controller';
 
 type ErrorMessage = {
     message: string;
@@ -82,10 +84,19 @@ export const postNewPost: FormPOSTHandler = [
                 errors: errors.array(),
             });
         } else {
-            // Only create and store a new post if no errors
+            // Only authorised authors will reach this point
+            const author = await User.findOne({
+                username: (req as AuthenticatedRequest).username,
+            }).exec();
+
+            // Very unlikely safeguard
+            if (!author) {
+                res.status(404).json({ message: 'Author does not exist ' });
+                return;
+            }
+
             const post = new Post<PostModel>({
-                // TODO: to be replaced once JWT auth implemented
-                author: new Types.ObjectId('65068c32be2fd5ade9800662'),
+                author: new Types.ObjectId(author._id),
                 title: req.body.title as string,
                 timestamp: new Date(),
                 category: req.body.category as Category,
@@ -94,7 +105,7 @@ export const postNewPost: FormPOSTHandler = [
             });
 
             await post.save();
-            res.json(post);
+            res.status(201).json(post);
         }
     }),
 ];
@@ -214,7 +225,7 @@ export const deletePost = expressAsyncHandler(
         if (!deletedPost) {
             res.status(404).json(DOES_NOT_EXIST);
         } else {
-            res.json(deletedPost);
+            res.status(204).json(deletedPost);
         }
     }
 );

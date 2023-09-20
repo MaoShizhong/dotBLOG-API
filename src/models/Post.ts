@@ -17,7 +17,7 @@ export type PostModel = {
 
 const PostSchema = new Schema<PostModel>(
     {
-        author: { type: Schema.Types.Mixed, rel: 'Author', required: true },
+        author: { type: Schema.Types.Mixed, rel: 'User', required: true },
         title: { type: String, required: true },
         timestamp: { type: Date, required: true },
         category: {
@@ -33,7 +33,7 @@ const PostSchema = new Schema<PostModel>(
 );
 
 PostSchema.virtual('url').get(function (): string {
-    return `/authors/${this._id}`;
+    return `/posts/${this._id}`;
 });
 
 export const Post = model('post', PostSchema);

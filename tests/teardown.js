@@ -2,7 +2,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const { Post } = require('../dist/models/Post');
 const { Comment } = require('../dist/models/Comment');
-const { ReUserader } = require('../dist/models/User');
+const { User } = require('../dist/models/User');
 
 module.exports = async () => {
     try {

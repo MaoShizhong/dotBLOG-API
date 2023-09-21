@@ -16,7 +16,10 @@ describe('Test GET routes for handling posts', () => {
     async function getSpecificPost(postID) {
         try {
             const res = await fetch(`${localhost}/posts/${postID}`);
-            return await res.json();
+            return {
+                status: res.status,
+                ...(await res.json()),
+            };
         } catch (err) {
             return err;
         }
@@ -38,6 +41,7 @@ describe('Test GET routes for handling posts', () => {
 
     it('Fetches a post with the ObjectID "650694ce8d33ac7cc559e27e', async () => {
         expect(await getSpecificPost('650694ce8d33ac7cc559e27e')).toMatchObject({
+            status: 200,
             title: 'Latest post test',
             category: 'javascript',
             isPublished: true,
@@ -45,13 +49,25 @@ describe('Test GET routes for handling posts', () => {
     });
 
     it('Returns a 404 error if the searched postID (valid ObjectID) is not in the collection', async () => {
-        expect(await getSpecificPost('650394ce8d31ac7cc359e26a')).toMatchObject(DOES_NOT_EXIST);
-        expect(await getSpecificPost('620324ce8d31ac7cc351d24a')).toMatchObject(DOES_NOT_EXIST);
+        expect(await getSpecificPost('650394ce8d31ac7cc359e26a')).toMatchObject({
+            status: 404,
+            ...DOES_NOT_EXIST,
+        });
+        expect(await getSpecificPost('620324ce8d31ac7cc351d24a')).toMatchObject({
+            status: 404,
+            ...DOES_NOT_EXIST,
+        });
     });
 
     it('Returns a 400 error if the searched postID is not a valid ObjectID pattern', async () => {
-        expect(await getSpecificPost('650694ce8d33ac7ccsa2e26f')).toMatchObject(INVALID_ID);
-        expect(await getSpecificPost('foobar')).toMatchObject(INVALID_ID);
+        expect(await getSpecificPost('650694ce8d33ac7ccsa2e26f')).toMatchObject({
+            status: 404,
+            ...INVALID_ID,
+        });
+        expect(await getSpecificPost('foobar')).toMatchObject({
+            status: 404,
+            ...INVALID_ID,
+        });
     });
 });
 

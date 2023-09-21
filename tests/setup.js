@@ -104,14 +104,14 @@ async function createTestComments() {
 }
 
 function createTestReaders() {
-    const readerA = new Reader({
+    const readerA = new User({
         _id: '650884f8d099ae8404f13ffb',
         username: 'A',
         password: 'A',
         isAuthor: false,
     });
 
-    const readerB = new Reader({
+    const readerB = new User({
         _id: '65089c3cd099ae8404f14052',
         username: 'B',
         password: 'B',

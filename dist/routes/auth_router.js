@@ -30,7 +30,7 @@ exports.authRouter = (0, express_1.Router)();
 /*
     - Handle user creation
 */
-exports.authRouter.post('/signup', authController.createNewUser);
+exports.authRouter.post('/signup', authController.createNewUser, authController.login);
 /*
     - Handle login
 */

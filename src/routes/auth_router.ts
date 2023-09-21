@@ -6,7 +6,7 @@ export const authRouter = Router();
 /*
     - Handle user creation
 */
-authRouter.post('/signup', authController.createNewUser);
+authRouter.post('/signup', authController.createNewUser, authController.login);
 
 /*
     - Handle login

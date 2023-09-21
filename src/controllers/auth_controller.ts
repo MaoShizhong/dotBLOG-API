@@ -16,6 +16,7 @@ export interface AuthenticatedRequest extends Request {
 configDotenv();
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET!;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET!;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD!;
 
 const UNAUTHORIZED = { message: 'Could not authenticate - access denied' };
 const INCORRECT_LOGIN = { message: 'Incorrect username or password ' };
@@ -40,12 +41,15 @@ const createNewUser: FormPOSTHandler = [
         minNumbers: 1,
         minSymbols: 0,
     }),
+    body('author-password', 'Incorrect author password - cannot create account')
+        .optional({ values: 'undefined' })
+        .matches(ADMIN_PASSWORD),
 
     expressAsyncHandler(async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         const errors = validationResult(req);
 
         if (!errors.isEmpty()) {
-            res.status(401).json(errors.array());
+            res.status(401).json({ errors: errors.array() });
             return;
         }
 
@@ -60,9 +64,15 @@ const createNewUser: FormPOSTHandler = [
 
                 await user.save();
 
-                res.status(201).json({ success: true });
+                // proceed to auto-login if sign up successful
+                res.status(201);
+                next();
             } catch (err) {
-                next(err);
+                // do not proceed to login if server error with password hashing
+                res.status(500).json({
+                    message: 'Unknown error in sign up - please try again in a few minutes',
+                });
+                return;
             }
         });
     }),
@@ -84,7 +94,7 @@ const login: FormPOSTHandler = [
 
         const user = await User.findOne({ username: req.body.username }).exec();
         if (!user) {
-            res.status(401).json(INCORRECT_LOGIN);
+            res.status(401).json({ message: 'incorrect username mate!' });
             return;
         }
 
@@ -104,18 +114,18 @@ const login: FormPOSTHandler = [
             {
                 user: user,
                 secret: REFRESH_TOKEN_SECRET,
-                expiry: '60m',
+                expiry: '4h',
             }
         );
 
-        res.cookie('jwt', refreshToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none',
-            maxAge: 60 * 60 * 1000, // same age as refreshToken (60m in ms)
-        })
-            .header('authorization', accessToken)
-            .json({ message: `Successfully logged in as: ${user.username}` });
+        res.header('Authorization', accessToken)
+            .cookie('jwt', refreshToken, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'none',
+                maxAge: 4 * 60 * 60 * 1000, // same age as refreshToken (60m in ms)
+            })
+            .json({ username: user.username });
     }),
 ];
 
@@ -143,7 +153,7 @@ const refreshAccessToken = (req: Request, res: Response): void => {
 
     try {
         const decodedUser = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET) as JwtPayload;
-        console.info(decodedUser);
+
         const [newAccessToken, newRefreshToken] = generateTokens(
             {
                 user: decodedUser,
@@ -157,25 +167,22 @@ const refreshAccessToken = (req: Request, res: Response): void => {
             }
         );
 
-        console.log(newAccessToken);
-        console.log('-----');
-        console.log(newRefreshToken);
-
-        res.header('authorization', newAccessToken)
+        res.header('Authorization', newAccessToken)
             .cookie('jwt', newRefreshToken, {
                 httpOnly: true,
                 secure: true,
                 sameSite: 'none',
                 maxAge: 60 * 60 * 1000, // same age as refreshToken (60m in ms)
             })
-            .json({ message: 'Tokens refreshed' });
+            .json({ message: 'Tokens refreshed', username: decodedUser.username });
     } catch (error) {
-        res.status(400).send('Invalid refresh token.');
+        res.status(401).json(UNAUTHORIZED);
     }
 };
 
 const authJWT = (req: Request, res: Response, next: NextFunction): void => {
     const authHeaderWithBearer = req.headers?.authorization;
+    console.log(authHeaderWithBearer);
 
     if (!authHeaderWithBearer || !authHeaderWithBearer.startsWith('Bearer')) {
         res.status(401).json(UNAUTHORIZED);

@@ -18,18 +18,9 @@ const Post_1 = require("../models/Post");
 const express_async_handler_1 = __importDefault(require("express-async-handler"));
 const mongoose_1 = require("mongoose");
 const User_1 = require("../models/User");
-exports.INVALID_ID = {
-    message: 'Failed to fetch - invalid ID format',
-    status: 400,
-};
-exports.INVALID_QUERY = {
-    message: 'Failed to fetch - invalid query',
-    status: 400,
-};
-exports.DOES_NOT_EXIST = {
-    message: 'Failed to fetch - no resource with that ID',
-    status: 404,
-};
+exports.INVALID_ID = { message: 'Failed to fetch - invalid ID format' };
+exports.INVALID_QUERY = { message: 'Failed to fetch - invalid query' };
+exports.DOES_NOT_EXIST = { message: 'Failed to fetch - no resource with that ID' };
 /*
     - GET
 */

@@ -6,23 +6,9 @@ import { Types } from 'mongoose';
 import { User } from '../models/User';
 import { AuthenticatedRequest } from './auth_controller';
 
-type ErrorMessage = {
-    message: string;
-    status: number;
-};
-
-export const INVALID_ID: ErrorMessage = {
-    message: 'Failed to fetch - invalid ID format',
-    status: 400,
-};
-export const INVALID_QUERY: ErrorMessage = {
-    message: 'Failed to fetch - invalid query',
-    status: 400,
-};
-export const DOES_NOT_EXIST: ErrorMessage = {
-    message: 'Failed to fetch - no resource with that ID',
-    status: 404,
-};
+export const INVALID_ID = { message: 'Failed to fetch - invalid ID format' } as const;
+export const INVALID_QUERY = { message: 'Failed to fetch - invalid query' } as const;
+export const DOES_NOT_EXIST = { message: 'Failed to fetch - no resource with that ID' } as const;
 
 /*
     - GET

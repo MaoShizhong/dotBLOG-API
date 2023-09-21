@@ -2,8 +2,8 @@ import express, { RequestHandler } from 'express';
 import { ValidationChain } from 'express-validator';
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';
-import helmet from 'helmet';
 import mongoose from 'mongoose';
+import cors from 'cors';
 import { configDotenv } from 'dotenv';
 
 import { resourceRouter } from './routes/resource_router';
@@ -42,7 +42,13 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(helmet());
+app.use(
+    cors({
+        origin: 'http://localhost:5173',
+        methods: ['POST', 'GET', 'DELETE', 'PUT', 'PATCH'],
+        exposedHeaders: 'Authorization',
+    })
+);
 
 app.use('/', resourceRouter);
 app.use('/auth', authRouter);

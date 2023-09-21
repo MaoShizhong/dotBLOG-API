@@ -24,6 +24,7 @@ const Comment_1 = require("../models/Comment");
 (0, dotenv_1.configDotenv)();
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const UNAUTHORIZED = { message: 'Could not authenticate - access denied' };
 const INCORRECT_LOGIN = { message: 'Incorrect username or password ' };
 /*
@@ -43,10 +44,13 @@ const createNewUser = [
         minNumbers: 1,
         minSymbols: 0,
     }),
+    (0, express_validator_1.body)('author-password', 'Incorrect author password - cannot create account')
+        .optional({ values: 'undefined' })
+        .matches(ADMIN_PASSWORD),
     (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
         const errors = (0, express_validator_1.validationResult)(req);
         if (!errors.isEmpty()) {
-            res.status(401).json(errors.array());
+            res.status(401).json({ errors: errors.array() });
             return;
         }
         bcrypt_1.default.hash(req.body.password, 10, (err, hashedPassword) => __awaiter(void 0, void 0, void 0, function* () {
@@ -58,10 +62,16 @@ const createNewUser = [
                     isAuthor: !!req.query.author,
                 });
                 yield user.save();
-                res.status(201).json({ success: true });
+                // proceed to auto-login if sign up successful
+                res.status(201);
+                next();
             }
             catch (err) {
-                next(err);
+                // do not proceed to login if server error with password hashing
+                res.status(500).json({
+                    message: 'Unknown error in sign up - please try again in a few minutes',
+                });
+                return;
             }
         }));
     })),
@@ -81,7 +91,7 @@ const login = [
         }
         const user = yield User_1.User.findOne({ username: req.body.username }).exec();
         if (!user) {
-            res.status(401).json(INCORRECT_LOGIN);
+            res.status(401).json({ message: 'incorrect username mate!' });
             return;
         }
         // Must be separate from above in case of no user - will be unable to read user.password
@@ -97,16 +107,16 @@ const login = [
         }, {
             user: user,
             secret: REFRESH_TOKEN_SECRET,
-            expiry: '60m',
+            expiry: '4h',
         });
-        res.cookie('jwt', refreshToken, {
+        res.header('Authorization', accessToken)
+            .cookie('jwt', refreshToken, {
             httpOnly: true,
             secure: true,
             sameSite: 'none',
-            maxAge: 60 * 60 * 1000, // same age as refreshToken (60m in ms)
+            maxAge: 4 * 60 * 60 * 1000, // same age as refreshToken (60m in ms)
         })
-            .header('authorization', accessToken)
-            .json({ message: `Successfully logged in as: ${user.username}` });
+            .json({ username: user.username });
     })),
 ];
 exports.login = login;
@@ -133,7 +143,6 @@ const refreshAccessToken = (req, res) => {
     }
     try {
         const decodedUser = jsonwebtoken_1.default.verify(refreshToken, REFRESH_TOKEN_SECRET);
-        console.info(decodedUser);
         const [newAccessToken, newRefreshToken] = (0, tokens_1.generateTokens)({
             user: decodedUser,
             secret: ACCESS_TOKEN_SECRET,
@@ -143,26 +152,24 @@ const refreshAccessToken = (req, res) => {
             secret: REFRESH_TOKEN_SECRET,
             expiry: '60m',
         });
-        console.log(newAccessToken);
-        console.log('-----');
-        console.log(newRefreshToken);
-        res.header('authorization', newAccessToken)
+        res.header('Authorization', newAccessToken)
             .cookie('jwt', newRefreshToken, {
             httpOnly: true,
             secure: true,
             sameSite: 'none',
             maxAge: 60 * 60 * 1000, // same age as refreshToken (60m in ms)
         })
-            .json({ message: 'Tokens refreshed' });
+            .json({ message: 'Tokens refreshed', username: decodedUser.username });
     }
     catch (error) {
-        res.status(400).send('Invalid refresh token.');
+        res.status(401).json(UNAUTHORIZED);
     }
 };
 exports.refreshAccessToken = refreshAccessToken;
 const authJWT = (req, res, next) => {
     var _a;
     const authHeaderWithBearer = (_a = req.headers) === null || _a === void 0 ? void 0 : _a.authorization;
+    console.log(authHeaderWithBearer);
     if (!authHeaderWithBearer || !authHeaderWithBearer.startsWith('Bearer')) {
         res.status(401).json(UNAUTHORIZED);
         return;

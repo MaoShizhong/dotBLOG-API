@@ -54,17 +54,14 @@ exports.postNewPost = [
         .notEmpty()
         .escape()
         .customSanitizer(convertToArrayOfParagraphs),
-    // Selection will be converted into a boolean, with the default value being false unless the
-    // 'yes' option was selected specifically
-    (0, express_validator_1.body)('isPublished')
-        .trim()
-        .toLowerCase()
-        .escape()
-        .customSanitizer((selection) => selection === 'yes'),
+    /* If not checked, field will not be submitted (undefined) - checking submits a truthy string */
+    (0, express_validator_1.body)('publish')
+        .optional({ values: undefined })
+        .custom((value) => !!value),
     (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const errors = (0, express_validator_1.validationResult)(req);
         if (!errors.isEmpty()) {
-            res.json({
+            res.status(401).json({
                 errors: errors.array(),
             });
         }
@@ -84,10 +81,10 @@ exports.postNewPost = [
                 timestamp: new Date(),
                 category: req.body.category,
                 text: req.body.text,
-                isPublished: req.body.isPublished,
+                isPublished: !!req.body.publish,
             });
             yield post.save();
-            res.status(201).json(post);
+            res.status(201).json({ url: post.url });
         }
     })),
 ];
@@ -108,16 +105,12 @@ exports.editPost = [
         .customSanitizer((text) => 
     // Convert text into array of paragraphs
     text.replaceAll('\r', '').replaceAll(/\n+/g, '\n').split('\n')),
-    // Selection will be converted into a boolean, with the default value being false unless the
-    // 'yes' option was selected specifically
-    (0, express_validator_1.body)('isPublished')
-        .optional()
-        .trim()
-        .toLowerCase()
-        .escape()
-        .customSanitizer((selection) => selection === 'yes'),
+    /* If not checked, field will not be submitted (undefined) - checking submits a truthy string */
+    (0, express_validator_1.body)('publish')
+        .optional({ values: undefined })
+        .custom((value) => !!value),
     (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-        var _a, _b, _c, _d;
+        var _a, _b, _c;
         if (!mongoose_1.Types.ObjectId.isValid(req.params.postID)) {
             res.status(400).json(exports.INVALID_ID);
             return;
@@ -142,7 +135,7 @@ exports.editPost = [
                     timestamp: existingPost.timestamp,
                     category: (_b = req.body.category) !== null && _b !== void 0 ? _b : existingPost.category,
                     text: (_c = req.body.text) !== null && _c !== void 0 ? _c : existingPost.text,
-                    isPublished: (_d = req.body.isPublished) !== null && _d !== void 0 ? _d : existingPost.isPublished,
+                    isPublished: req.body.publish || existingPost.isPublished,
                 });
                 const editedPost = yield Post_1.Post.findByIdAndUpdate(req.params.postID, postWithEdits, {
                     new: true,

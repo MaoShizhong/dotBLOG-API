@@ -54,19 +54,16 @@ export const postNewPost: FormPOSTHandler = [
         .escape()
         .customSanitizer(convertToArrayOfParagraphs),
 
-    // Selection will be converted into a boolean, with the default value being false unless the
-    // 'yes' option was selected specifically
-    body('isPublished')
-        .trim()
-        .toLowerCase()
-        .escape()
-        .customSanitizer((selection: string): boolean => selection === 'yes'),
+    /* If not checked, field will not be submitted (undefined) - checking submits a truthy string */
+    body('publish')
+        .optional({ values: undefined })
+        .custom((value: string): boolean => !!value),
 
     expressAsyncHandler(async (req: Request, res: Response): Promise<void> => {
         const errors = validationResult(req);
 
         if (!errors.isEmpty()) {
-            res.json({
+            res.status(401).json({
                 errors: errors.array(),
             });
         } else {
@@ -87,11 +84,11 @@ export const postNewPost: FormPOSTHandler = [
                 timestamp: new Date(),
                 category: req.body.category as Category,
                 text: req.body.text as string[],
-                isPublished: req.body.isPublished as boolean,
+                isPublished: !!req.body.publish as boolean,
             });
 
             await post.save();
-            res.status(201).json(post);
+            res.status(201).json({ url: post.url });
         }
     }),
 ];
@@ -117,14 +114,10 @@ export const editPost: FormPOSTHandler = [
             text.replaceAll('\r', '').replaceAll(/\n+/g, '\n').split('\n')
         ),
 
-    // Selection will be converted into a boolean, with the default value being false unless the
-    // 'yes' option was selected specifically
-    body('isPublished')
-        .optional()
-        .trim()
-        .toLowerCase()
-        .escape()
-        .customSanitizer((selection: string): boolean => selection === 'yes'),
+    /* If not checked, field will not be submitted (undefined) - checking submits a truthy string */
+    body('publish')
+        .optional({ values: undefined })
+        .custom((value: string): boolean => !!value),
 
     expressAsyncHandler(async (req: Request, res: Response): Promise<void> => {
         if (!Types.ObjectId.isValid(req.params.postID)) {
@@ -152,7 +145,7 @@ export const editPost: FormPOSTHandler = [
                     timestamp: existingPost.timestamp,
                     category: req.body.category ?? existingPost.category,
                     text: req.body.text ?? existingPost.text,
-                    isPublished: req.body.isPublished ?? existingPost.isPublished,
+                    isPublished: req.body.publish || existingPost.isPublished,
                 });
 
                 const editedPost = await Post.findByIdAndUpdate(req.params.postID, postWithEdits, {

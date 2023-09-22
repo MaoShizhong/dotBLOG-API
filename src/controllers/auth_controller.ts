@@ -41,7 +41,7 @@ const createNewUser: FormPOSTHandler = [
         minNumbers: 1,
         minSymbols: 0,
     }),
-    body('author-password', 'Incorrect author password - cannot create account')
+    body('authorPassword', 'Incorrect author password - cannot create account')
         .optional({ values: 'undefined' })
         .matches(ADMIN_PASSWORD),
 
@@ -56,10 +56,10 @@ const createNewUser: FormPOSTHandler = [
         bcrypt.hash(req.body.password, 10, async (err, hashedPassword): Promise<void> => {
             try {
                 const user = new User({
-                    name: req.body.name || undefined,
-                    username: req.body.username,
-                    password: hashedPassword,
-                    isAuthor: !!req.query.author,
+                    name: (req.body.name as string) || undefined,
+                    username: req.body.username as string,
+                    password: hashedPassword as string,
+                    isAuthor: !!req.body.authorPassword,
                 });
 
                 await user.save();
@@ -182,7 +182,6 @@ const refreshAccessToken = (req: Request, res: Response): void => {
 
 const authJWT = (req: Request, res: Response, next: NextFunction): void => {
     const authHeaderWithBearer = req.headers?.authorization;
-    console.log(authHeaderWithBearer);
 
     if (!authHeaderWithBearer || !authHeaderWithBearer.startsWith('Bearer')) {
         res.status(401).json(UNAUTHORIZED);
@@ -207,7 +206,6 @@ const authJWT = (req: Request, res: Response, next: NextFunction): void => {
 
 const authAuthor = (req: Request, res: Response, next: NextFunction): void => {
     const isAuthor = (req as AuthenticatedRequest)?.isAuthor;
-    console.log(isAuthor);
 
     if (!isAuthor) {
         res.status(401).json(UNAUTHORIZED);

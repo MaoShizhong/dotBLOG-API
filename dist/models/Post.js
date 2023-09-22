@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Post = exports.categories = void 0;
 const mongoose_1 = require("mongoose");
-exports.categories = ['javascript', 'html', 'css', 'other'];
+exports.categories = ['javascript/typescript', 'html', 'css', 'other'];
 const PostSchema = new mongoose_1.Schema({
     author: { type: mongoose_1.Schema.Types.Mixed, rel: 'User', required: true },
     title: { type: String, required: true },

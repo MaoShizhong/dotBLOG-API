@@ -1,6 +1,6 @@
 import { Schema, Types, model } from 'mongoose';
 
-export const categories = ['javascript', 'html', 'css', 'other'] as const;
+export const categories = ['javascript/typescript', 'html', 'css', 'other'] as const;
 
 export type Category = (typeof categories)[number];
 

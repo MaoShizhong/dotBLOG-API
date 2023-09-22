@@ -44,7 +44,7 @@ const createNewUser = [
         minNumbers: 1,
         minSymbols: 0,
     }),
-    (0, express_validator_1.body)('author-password', 'Incorrect author password - cannot create account')
+    (0, express_validator_1.body)('authorPassword', 'Incorrect author password - cannot create account')
         .optional({ values: 'undefined' })
         .matches(ADMIN_PASSWORD),
     (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
@@ -59,7 +59,7 @@ const createNewUser = [
                     name: req.body.name || undefined,
                     username: req.body.username,
                     password: hashedPassword,
-                    isAuthor: !!req.query.author,
+                    isAuthor: !!req.body.authorPassword,
                 });
                 yield user.save();
                 // proceed to auto-login if sign up successful
@@ -169,7 +169,6 @@ exports.refreshAccessToken = refreshAccessToken;
 const authJWT = (req, res, next) => {
     var _a;
     const authHeaderWithBearer = (_a = req.headers) === null || _a === void 0 ? void 0 : _a.authorization;
-    console.log(authHeaderWithBearer);
     if (!authHeaderWithBearer || !authHeaderWithBearer.startsWith('Bearer')) {
         res.status(401).json(UNAUTHORIZED);
         return;
@@ -190,7 +189,6 @@ const authJWT = (req, res, next) => {
 exports.authJWT = authJWT;
 const authAuthor = (req, res, next) => {
     const isAuthor = req === null || req === void 0 ? void 0 : req.isAuthor;
-    console.log(isAuthor);
     if (!isAuthor) {
         res.status(401).json(UNAUTHORIZED);
     }

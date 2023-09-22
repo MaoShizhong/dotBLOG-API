@@ -100,7 +100,6 @@ describe('Test POST route for handling posts', () => {
         timestamp: new Date(),
         category: 'html',
         text: '\n\n\ntest\n\r\r\r\r\n\ntest2\n',
-        isPublished: 'no',
     };
 
     const formWithInvalidCategory = {
@@ -108,7 +107,6 @@ describe('Test POST route for handling posts', () => {
         timestamp: new Date(),
         category: 'htmls',
         text: '\n\n\ntest\n\r\r\r\r\n\ntest2\n',
-        isPublished: 'no',
     };
 
     const validForm = {
@@ -116,7 +114,6 @@ describe('Test POST route for handling posts', () => {
         timestamp: new Date(),
         category: 'html',
         text: '\n\n\ntest\n\r\r\r\r\n\ntest2\n',
-        isPublished: 'no',
     };
 
     it('Errors upon submitting a new post with an empty title', async () => {

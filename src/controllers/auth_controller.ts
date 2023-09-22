@@ -1,5 +1,5 @@
 import { User, UserModel } from '../models/User';
-import { NextFunction, Request, Response } from 'express';
+import { CookieOptions, NextFunction, Request, Response } from 'express';
 import expressAsyncHandler from 'express-async-handler';
 import { body, validationResult } from 'express-validator';
 import { generateTokens } from '../auth/tokens';
@@ -21,7 +21,14 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD!;
 const UNAUTHORIZED = { message: 'Could not authenticate - access denied' } as const;
 const INCORRECT_LOGIN = { message: 'Incorrect username or password ' } as const;
 
-const EXPIRY = { accessString: '2s', refreshString: '4h', refreshMS: 4 * 60 * 60 * 1000 } as const;
+const cookieOptions: CookieOptions = { httpOnly: true, secure: true, sameSite: 'none' };
+
+const expiry = {
+    accessString: '10m',
+    accessMS: 10 * 60 * 1000,
+    refreshString: '4h',
+    refreshMS: 4 * 60 * 60 * 1000,
+} as const;
 
 /*
     - User creation
@@ -111,56 +118,53 @@ const login: FormPOSTHandler = [
             {
                 user: user,
                 secret: ACCESS_TOKEN_SECRET,
-                expiry: EXPIRY.accessString,
+                expiry: expiry.accessString,
             },
             {
                 user: user,
                 secret: REFRESH_TOKEN_SECRET,
-                expiry: EXPIRY.refreshString,
+                expiry: expiry.refreshString,
             }
         );
 
-        res.header('Authorization', `Bearer ${accessToken}`)
-            .cookie('jwt', refreshToken, {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'none',
-                maxAge: EXPIRY.refreshMS, // same age as refreshToken (4h in ms)
-            })
+        res.cookie('access', accessToken, { ...cookieOptions, maxAge: expiry.accessMS })
+            .cookie('refresh', refreshToken, { ...cookieOptions, maxAge: expiry.refreshMS })
             .json({ username: user.username });
     }),
 ];
 
 const logout = (req: Request, res: Response): void => {
-    const cookies = req.cookies?.jwt;
-    if (!cookies) {
+    const cookies = req.cookies;
+
+    if (!cookies.refresh && !cookies.access) {
         res.sendStatus(204);
         return;
     }
 
-    res.clearCookie('jwt', { httpOnly: true, secure: true, sameSite: 'none' });
-    res.json({ message: 'Successful logout - cleared cookies' });
+    res.clearCookie('access', { ...cookieOptions, maxAge: expiry.refreshMS })
+        .clearCookie('refresh', { ...cookieOptions, maxAge: expiry.refreshMS })
+        .json({
+            message: 'Successful logout - cleared cookies',
+        });
 };
 
 /*
     - JWTs/auth
 */
 const authJWT = (req: Request, res: Response, next: NextFunction): void => {
-    const authHeaderWithBearer = req.headers?.authorization;
+    const accessToken: string | undefined = req.cookies?.access;
 
-    if (!authHeaderWithBearer || !authHeaderWithBearer.startsWith('Bearer')) {
+    if (!accessToken) {
         res.status(401).json(UNAUTHORIZED);
         return;
     }
 
-    // Get the token portion of the auth header
-    const accessToken = authHeaderWithBearer.split(' ')[1];
-
     try {
         const decodedUser = jwt.verify(accessToken, ACCESS_TOKEN_SECRET) as JwtPayload;
 
-        (req as AuthenticatedRequest).username = decodedUser.username;
-        (req as AuthenticatedRequest).isAuthor = decodedUser.isAuthor;
+        const request = req as AuthenticatedRequest;
+        request.username = decodedUser.username;
+        request.isAuthor = decodedUser.isAuthor;
 
         next();
     } catch (error) {
@@ -186,16 +190,16 @@ const authCommenter = expressAsyncHandler(
             .exec();
         const usernameToAuthenticate = (req as AuthenticatedRequest).username;
 
-        if (!comment || comment.commenter.username !== usernameToAuthenticate) {
-            res.status(401).json(UNAUTHORIZED);
-        } else {
+        if (comment && comment.commenter.username === usernameToAuthenticate) {
             next();
+        } else {
+            res.status(401).json(UNAUTHORIZED);
         }
     }
 );
 
 const refreshAccessToken = (req: Request, res: Response): void => {
-    const refreshToken: string | undefined = req.cookies?.jwt;
+    const refreshToken: string | undefined = req.cookies?.refresh;
 
     if (!refreshToken) {
         res.status(401).json(UNAUTHORIZED);
@@ -209,22 +213,17 @@ const refreshAccessToken = (req: Request, res: Response): void => {
             {
                 user: decodedUser,
                 secret: ACCESS_TOKEN_SECRET,
-                expiry: EXPIRY.accessString,
+                expiry: expiry.accessString,
             },
             {
                 user: decodedUser,
                 secret: REFRESH_TOKEN_SECRET,
-                expiry: EXPIRY.refreshString,
+                expiry: expiry.refreshString,
             }
         );
 
-        res.header('Authorization', `Bearer ${newAccessToken}`)
-            .cookie('jwt', newRefreshToken, {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'none',
-                maxAge: EXPIRY.refreshMS, // same age as refreshToken (4h in ms)
-            })
+        res.cookie('access', newAccessToken, { ...cookieOptions, maxAge: expiry.accessMS })
+            .cookie('refresh', newRefreshToken, { ...cookieOptions, maxAge: expiry.refreshMS })
             .json({ message: 'Tokens refreshed', username: decodedUser.username });
     } catch (error) {
         res.status(401).json(UNAUTHORIZED);

@@ -38,12 +38,12 @@ exports.getSpecificPost = (0, express_async_handler_1.default)((req, res) => __a
         res.status(400).json(exports.INVALID_ID);
         return;
     }
-    const post = yield Post_1.Post.findById(req.params.postID).exec();
-    if (!post) {
-        res.status(404).json(exports.DOES_NOT_EXIST);
+    const post = yield Post_1.Post.findById(req.params.postID).populate('author', 'name -_id').exec();
+    if (post) {
+        res.json(post);
     }
     else {
-        res.json(post);
+        res.status(404).json(exports.DOES_NOT_EXIST);
     }
 }));
 /*

@@ -33,12 +33,12 @@ export const getSpecificPost = expressAsyncHandler(
             return;
         }
 
-        const post = await Post.findById(req.params.postID).exec();
+        const post = await Post.findById(req.params.postID).populate('author', 'name -_id').exec();
 
-        if (!post) {
-            res.status(404).json(DOES_NOT_EXIST);
-        } else {
+        if (post) {
             res.json(post);
+        } else {
+            res.status(404).json(DOES_NOT_EXIST);
         }
     }
 );

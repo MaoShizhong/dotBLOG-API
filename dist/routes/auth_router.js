@@ -39,4 +39,4 @@ exports.authRouter.get('/logout', authController.logout);
 /*
     - Handle JWTs
 */
-exports.authRouter.post('/refresh', authController.refreshAccessToken);
+exports.authRouter.get('/refresh', authController.refreshAccessToken);

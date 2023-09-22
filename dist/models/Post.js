@@ -15,7 +15,7 @@ const PostSchema = new mongoose_1.Schema({
     },
     text: { type: [String], required: true },
     isPublished: { type: Boolean, required: true },
-}, { versionKey: false });
+}, { toJSON: { virtuals: true }, versionKey: false });
 PostSchema.virtual('url').get(function () {
     return `/posts/${this._id}`;
 });

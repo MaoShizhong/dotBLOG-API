@@ -18,8 +18,10 @@ const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET!;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET!;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD!;
 
-const UNAUTHORIZED = { message: 'Could not authenticate - access denied' };
-const INCORRECT_LOGIN = { message: 'Incorrect username or password ' };
+const UNAUTHORIZED = { message: 'Could not authenticate - access denied' } as const;
+const INCORRECT_LOGIN = { message: 'Incorrect username or password ' } as const;
+
+const EXPIRY = { accessString: '2s', refreshString: '4h', refreshMS: 4 * 60 * 60 * 1000 } as const;
 
 /*
     - User creation
@@ -109,21 +111,21 @@ const login: FormPOSTHandler = [
             {
                 user: user,
                 secret: ACCESS_TOKEN_SECRET,
-                expiry: '15m',
+                expiry: EXPIRY.accessString,
             },
             {
                 user: user,
                 secret: REFRESH_TOKEN_SECRET,
-                expiry: '4h',
+                expiry: EXPIRY.refreshString,
             }
         );
 
-        res.header('Authorization', accessToken)
+        res.header('Authorization', `Bearer ${accessToken}`)
             .cookie('jwt', refreshToken, {
                 httpOnly: true,
                 secure: true,
                 sameSite: 'none',
-                maxAge: 4 * 60 * 60 * 1000, // same age as refreshToken (60m in ms)
+                maxAge: EXPIRY.refreshMS, // same age as refreshToken (4h in ms)
             })
             .json({ username: user.username });
     }),
@@ -143,43 +145,6 @@ const logout = (req: Request, res: Response): void => {
 /*
     - JWTs/auth
 */
-const refreshAccessToken = (req: Request, res: Response): void => {
-    const refreshToken: string | undefined = req.cookies?.jwt;
-
-    if (!refreshToken) {
-        res.status(401).json(UNAUTHORIZED);
-        return;
-    }
-
-    try {
-        const decodedUser = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET) as JwtPayload;
-
-        const [newAccessToken, newRefreshToken] = generateTokens(
-            {
-                user: decodedUser,
-                secret: ACCESS_TOKEN_SECRET,
-                expiry: '15m',
-            },
-            {
-                user: decodedUser,
-                secret: REFRESH_TOKEN_SECRET,
-                expiry: '60m',
-            }
-        );
-
-        res.header('Authorization', newAccessToken)
-            .cookie('jwt', newRefreshToken, {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'none',
-                maxAge: 60 * 60 * 1000, // same age as refreshToken (60m in ms)
-            })
-            .json({ message: 'Tokens refreshed', username: decodedUser.username });
-    } catch (error) {
-        res.status(401).json(UNAUTHORIZED);
-    }
-};
-
 const authJWT = (req: Request, res: Response, next: NextFunction): void => {
     const authHeaderWithBearer = req.headers?.authorization;
 
@@ -228,5 +193,42 @@ const authCommenter = expressAsyncHandler(
         }
     }
 );
+
+const refreshAccessToken = (req: Request, res: Response): void => {
+    const refreshToken: string | undefined = req.cookies?.jwt;
+
+    if (!refreshToken) {
+        res.status(401).json(UNAUTHORIZED);
+        return;
+    }
+
+    try {
+        const decodedUser = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET) as JwtPayload;
+
+        const [newAccessToken, newRefreshToken] = generateTokens(
+            {
+                user: decodedUser,
+                secret: ACCESS_TOKEN_SECRET,
+                expiry: EXPIRY.accessString,
+            },
+            {
+                user: decodedUser,
+                secret: REFRESH_TOKEN_SECRET,
+                expiry: EXPIRY.refreshString,
+            }
+        );
+
+        res.header('Authorization', `Bearer ${newAccessToken}`)
+            .cookie('jwt', newRefreshToken, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'none',
+                maxAge: EXPIRY.refreshMS, // same age as refreshToken (4h in ms)
+            })
+            .json({ message: 'Tokens refreshed', username: decodedUser.username });
+    } catch (error) {
+        res.status(401).json(UNAUTHORIZED);
+    }
+};
 
 export { createNewUser, login, logout, refreshAccessToken, authJWT, authAuthor, authCommenter };

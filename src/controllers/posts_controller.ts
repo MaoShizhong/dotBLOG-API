@@ -176,13 +176,13 @@ export const publishPost = expressAsyncHandler(
             return;
         }
 
-        const newPublishedStatus = req.query.publish === 'true';
-
         const editedPost = await Post.findByIdAndUpdate(
             req.params.postID,
-            { isPublished: newPublishedStatus },
+            { isPublished: req.query.publish === 'true' },
             { new: true }
-        ).exec();
+        )
+            .populate('author', 'name -_id')
+            .exec();
 
         if (!editedPost) {
             res.status(404).json(DOES_NOT_EXIST);

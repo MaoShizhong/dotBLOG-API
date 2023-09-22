@@ -29,7 +29,7 @@ const PostSchema = new Schema<PostModel>(
         text: { type: [String], required: true },
         isPublished: { type: Boolean, required: true },
     },
-    { versionKey: false }
+    { toJSON: { virtuals: true }, versionKey: false }
 );
 
 PostSchema.virtual('url').get(function (): string {

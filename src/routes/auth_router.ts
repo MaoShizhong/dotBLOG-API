@@ -18,4 +18,4 @@ authRouter.get('/logout', authController.logout);
 /*
     - Handle JWTs
 */
-authRouter.post('/refresh', authController.refreshAccessToken);
+authRouter.get('/refresh', authController.refreshAccessToken);

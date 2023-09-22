@@ -26,7 +26,10 @@ exports.DOES_NOT_EXIST = { message: 'Failed to fetch - no resource with that ID'
 */
 exports.getAllPosts = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     // Show newest posts first
-    const posts = yield Post_1.Post.find().sort({ timestamp: -1 }).exec();
+    const posts = yield Post_1.Post.find()
+        .populate('author', '-_id name username')
+        .sort({ timestamp: -1 })
+        .exec();
     res.json(posts);
 }));
 // GET INDIVIDUAL POST

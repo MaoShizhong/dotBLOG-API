@@ -4,7 +4,7 @@ exports.Post = exports.categories = void 0;
 const mongoose_1 = require("mongoose");
 exports.categories = ['javascript/typescript', 'html', 'css', 'other'];
 const PostSchema = new mongoose_1.Schema({
-    author: { type: mongoose_1.Schema.Types.Mixed, rel: 'User', required: true },
+    author: { type: mongoose_1.Schema.Types.Mixed, ref: 'user', required: true },
     title: { type: String, required: true },
     timestamp: { type: Date, required: true },
     category: {

@@ -16,7 +16,10 @@ export const DOES_NOT_EXIST = { message: 'Failed to fetch - no resource with tha
 export const getAllPosts = expressAsyncHandler(
     async (req: Request, res: Response): Promise<void> => {
         // Show newest posts first
-        const posts = await Post.find().sort({ timestamp: -1 }).exec();
+        const posts = await Post.find()
+            .populate('author', '-_id name username')
+            .sort({ timestamp: -1 })
+            .exec();
 
         res.json(posts);
     }

@@ -17,7 +17,7 @@ export type PostModel = {
 
 const PostSchema = new Schema<PostModel>(
     {
-        author: { type: Schema.Types.Mixed, rel: 'User', required: true },
+        author: { type: Schema.Types.Mixed, ref: 'user', required: true },
         title: { type: String, required: true },
         timestamp: { type: Date, required: true },
         category: {

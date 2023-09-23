@@ -56,8 +56,7 @@ exports.postNewPost = [
         .trim()
         .notEmpty()
         .customSanitizer(removeDangerousScriptTags)
-        .escape()
-        .customSanitizer(convertToArrayOfParagraphs),
+        .escape(),
     /* If not checked, field will not be submitted (undefined) - checking submits a truthy string */
     (0, express_validator_1.body)('publish')
         .optional({ values: undefined })
@@ -103,8 +102,7 @@ exports.editPost = [
         .trim()
         .notEmpty()
         .customSanitizer(removeDangerousScriptTags)
-        .escape()
-        .customSanitizer(convertToArrayOfParagraphs),
+        .escape(),
     /* If not checked, field will not be submitted (undefined) - checking submits a truthy string */
     (0, express_validator_1.body)('publish')
         .optional({ values: undefined })

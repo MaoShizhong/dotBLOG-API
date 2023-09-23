@@ -55,8 +55,7 @@ export const postNewPost: FormPOSTHandler = [
         .trim()
         .notEmpty()
         .customSanitizer(removeDangerousScriptTags)
-        .escape()
-        .customSanitizer(convertToArrayOfParagraphs),
+        .escape(),
 
     /* If not checked, field will not be submitted (undefined) - checking submits a truthy string */
     body('publish')
@@ -110,8 +109,7 @@ export const editPost: FormPOSTHandler = [
         .trim()
         .notEmpty()
         .customSanitizer(removeDangerousScriptTags)
-        .escape()
-        .customSanitizer(convertToArrayOfParagraphs),
+        .escape(),
 
     /* If not checked, field will not be submitted (undefined) - checking submits a truthy string */
     body('publish')

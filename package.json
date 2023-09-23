@@ -6,7 +6,8 @@
     "server": "nodemon ./dist/app.js",
     "ts": "tsc --watch",
     "test": "jest --detectOpenHandles --watch */*.test.js",
-    "start": "concurrently -k -n COMPILER,NODEMON -c blueBright,magenta \"npm run ts\" \"ts-cleaner --watch\" \"DEBUG=blog-API:* npm run server\""
+    "dev": "concurrently -k -n COMPILER,NODEMON -c blueBright,magenta \"npm run ts\" \"ts-cleaner --watch\" \"DEBUG=blog-API:* npm run server\"",
+    "start": "node ./dist/app.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

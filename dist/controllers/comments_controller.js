@@ -69,7 +69,7 @@ exports.postNewComment = [
     (0, express_validator_1.body)('text', 'Comment cannot be empty')
         .trim()
         .notEmpty()
-        .escape()
+        .customSanitizer(posts_controller_1.removeDangerousScriptTags)
         .customSanitizer(posts_controller_1.convertToArrayOfParagraphs),
     (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const errors = (0, express_validator_1.validationResult)(req);
@@ -99,7 +99,7 @@ exports.editComment = [
     (0, express_validator_1.body)('text', 'Comment cannot be empty')
         .trim()
         .notEmpty()
-        .escape()
+        .customSanitizer(posts_controller_1.removeDangerousScriptTags)
         .customSanitizer(posts_controller_1.convertToArrayOfParagraphs),
     (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (!mongoose_1.Types.ObjectId.isValid(req.params.commentID)) {

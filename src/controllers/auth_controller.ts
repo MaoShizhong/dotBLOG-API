@@ -103,7 +103,7 @@ const login: FormPOSTHandler = [
 
         const user = await User.findOne({ username: req.body.username }).exec();
         if (!user) {
-            res.status(401).json({ message: 'incorrect username mate!' });
+            res.status(401).json(INCORRECT_LOGIN);
             return;
         }
 

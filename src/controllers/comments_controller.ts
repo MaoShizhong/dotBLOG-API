@@ -3,7 +3,12 @@ import expressAsyncHandler from 'express-async-handler';
 import { body, validationResult } from 'express-validator';
 import mongoose, { Types } from 'mongoose';
 import { Comment, CommentModel } from '../models/Comment';
-import { INVALID_ID, DOES_NOT_EXIST, convertToArrayOfParagraphs } from './posts_controller';
+import {
+    INVALID_ID,
+    DOES_NOT_EXIST,
+    convertToArrayOfParagraphs,
+    removeDangerousScriptTags,
+} from './posts_controller';
 
 type Query = {
     post?: string;
@@ -49,7 +54,7 @@ export const postNewComment: FormPOSTHandler = [
     body('text', 'Comment cannot be empty')
         .trim()
         .notEmpty()
-        .escape()
+        .customSanitizer(removeDangerousScriptTags)
         .customSanitizer(convertToArrayOfParagraphs),
 
     expressAsyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -82,7 +87,7 @@ export const editComment: FormPOSTHandler = [
     body('text', 'Comment cannot be empty')
         .trim()
         .notEmpty()
-        .escape()
+        .customSanitizer(removeDangerousScriptTags)
         .customSanitizer(convertToArrayOfParagraphs),
 
     expressAsyncHandler(async (req: Request, res: Response): Promise<void> => {

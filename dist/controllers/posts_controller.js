@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.convertToArrayOfParagraphs = exports.deletePost = exports.publishPost = exports.editPost = exports.postNewPost = exports.getSpecificPost = exports.getAllPosts = exports.DOES_NOT_EXIST = exports.INVALID_QUERY = exports.INVALID_ID = void 0;
+exports.convertToArrayOfParagraphs = exports.removeDangerousScriptTags = exports.deletePost = exports.publishPost = exports.editPost = exports.postNewPost = exports.getSpecificPost = exports.getAllPosts = exports.DOES_NOT_EXIST = exports.INVALID_QUERY = exports.INVALID_ID = void 0;
 const express_validator_1 = require("express-validator");
 const Post_1 = require("../models/Post");
 const express_async_handler_1 = __importDefault(require("express-async-handler"));
@@ -55,6 +55,7 @@ exports.postNewPost = [
     (0, express_validator_1.body)('text', 'Article cannot be empty')
         .trim()
         .notEmpty()
+        .customSanitizer(removeDangerousScriptTags)
         .escape()
         .customSanitizer(convertToArrayOfParagraphs),
     /* If not checked, field will not be submitted (undefined) - checking submits a truthy string */
@@ -101,10 +102,9 @@ exports.editPost = [
     (0, express_validator_1.body)('text', 'Article cannot be empty')
         .trim()
         .notEmpty()
+        .customSanitizer(removeDangerousScriptTags)
         .escape()
-        .customSanitizer((text) => 
-    // Convert text into array of paragraphs
-    text.replaceAll('\r', '').replaceAll(/\n+/g, '\n').split('\n')),
+        .customSanitizer(convertToArrayOfParagraphs),
     /* If not checked, field will not be submitted (undefined) - checking submits a truthy string */
     (0, express_validator_1.body)('publish')
         .optional({ values: undefined })
@@ -117,7 +117,7 @@ exports.editPost = [
         }
         const errors = (0, express_validator_1.validationResult)(req);
         if (!errors.isEmpty()) {
-            res.json({
+            res.status(400).json({
                 errors: errors.array(),
             });
         }
@@ -181,6 +181,10 @@ exports.deletePost = (0, express_async_handler_1.default)((req, res) => __awaite
         res.status(204).json(deletedPost);
     }
 }));
+function removeDangerousScriptTags(text) {
+    return text.replaceAll(/(<script>)|(<\/script>)|(?<=<script>)(.|\[^.])*(?=<\/script>)/g, '\n');
+}
+exports.removeDangerousScriptTags = removeDangerousScriptTags;
 function convertToArrayOfParagraphs(text) {
     // Convert text into array of paragraphs
     return text.replaceAll('\r', '').replaceAll(/\n+/g, '\n').split('\n');

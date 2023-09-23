@@ -98,7 +98,7 @@ const login = [
         }
         const user = yield User_1.User.findOne({ username: req.body.username }).exec();
         if (!user) {
-            res.status(401).json({ message: 'incorrect username mate!' });
+            res.status(401).json(INCORRECT_LOGIN);
             return;
         }
         // Must be separate from above in case of no user - will be unable to read user.password

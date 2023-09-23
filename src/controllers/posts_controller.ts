@@ -54,6 +54,7 @@ export const postNewPost: FormPOSTHandler = [
     body('text', 'Article cannot be empty')
         .trim()
         .notEmpty()
+        .customSanitizer(removeDangerousScriptTags)
         .escape()
         .customSanitizer(convertToArrayOfParagraphs),
 
@@ -108,11 +109,9 @@ export const editPost: FormPOSTHandler = [
     body('text', 'Article cannot be empty')
         .trim()
         .notEmpty()
+        .customSanitizer(removeDangerousScriptTags)
         .escape()
-        .customSanitizer((text: string): string[] =>
-            // Convert text into array of paragraphs
-            text.replaceAll('\r', '').replaceAll(/\n+/g, '\n').split('\n')
-        ),
+        .customSanitizer(convertToArrayOfParagraphs),
 
     /* If not checked, field will not be submitted (undefined) - checking submits a truthy string */
     body('publish')
@@ -128,7 +127,7 @@ export const editPost: FormPOSTHandler = [
         const errors = validationResult(req);
 
         if (!errors.isEmpty()) {
-            res.json({
+            res.status(400).json({
                 errors: errors.array(),
             });
         } else {
@@ -208,6 +207,10 @@ export const deletePost = expressAsyncHandler(
         }
     }
 );
+
+export function removeDangerousScriptTags(text: string): string {
+    return text.replaceAll(/(<script>)|(<\/script>)|(?<=<script>)(.|\[^.])*(?=<\/script>)/g, '\n');
+}
 
 export function convertToArrayOfParagraphs(text: string): string[] {
     // Convert text into array of paragraphs

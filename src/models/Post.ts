@@ -1,6 +1,6 @@
 import { Schema, Types, model } from 'mongoose';
 
-export const categories = ['javascript/typescript', 'html', 'css', 'other'] as const;
+export const categories = ['Javascript/Typescript', 'HTML', 'CSS', 'Other'] as const;
 
 export type Category = (typeof categories)[number];
 
@@ -24,7 +24,7 @@ const PostSchema = new Schema<PostModel>(
             type: String,
             required: true,
             enum: categories,
-            default: 'other',
+            default: 'Other',
         },
         text: { type: [String], required: true },
         isPublished: { type: Boolean, required: true },

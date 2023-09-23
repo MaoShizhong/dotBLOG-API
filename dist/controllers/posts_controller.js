@@ -51,7 +51,7 @@ exports.getSpecificPost = (0, express_async_handler_1.default)((req, res) => __a
 */
 exports.postNewPost = [
     (0, express_validator_1.body)('title', 'Title must not be empty').trim().notEmpty().escape(),
-    (0, express_validator_1.body)('category', 'Category must be one of the listed options').toLowerCase().isIn(Post_1.categories),
+    (0, express_validator_1.body)('category', 'Category must be one of the listed options').isIn(Post_1.categories),
     (0, express_validator_1.body)('text', 'Article cannot be empty')
         .trim()
         .notEmpty()
@@ -87,7 +87,8 @@ exports.postNewPost = [
                 isPublished: !!req.body.publish,
             });
             yield post.save();
-            res.status(201).json({ url: post.url });
+            yield post.populate('author', 'name -_id');
+            res.status(201).json(post);
         }
     })),
 ];
@@ -95,13 +96,9 @@ exports.postNewPost = [
     - PUT
 */
 exports.editPost = [
-    (0, express_validator_1.body)('title', 'Title must not be empty').optional().trim().notEmpty().escape(),
-    (0, express_validator_1.body)('category', 'Category must be one of the listed options')
-        .toLowerCase()
-        .optional()
-        .isIn(Post_1.categories),
+    (0, express_validator_1.body)('title', 'Title must not be empty').trim().notEmpty().escape(),
+    (0, express_validator_1.body)('category', 'Category must be one of the listed options').isIn(Post_1.categories),
     (0, express_validator_1.body)('text', 'Article cannot be empty')
-        .optional()
         .trim()
         .notEmpty()
         .escape()
@@ -142,7 +139,7 @@ exports.editPost = [
                 });
                 const editedPost = yield Post_1.Post.findByIdAndUpdate(req.params.postID, postWithEdits, {
                     new: true,
-                });
+                }).populate('author', 'name -_id');
                 res.json(editedPost);
             }
         }

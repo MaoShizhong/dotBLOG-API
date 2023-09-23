@@ -49,7 +49,7 @@ export const getSpecificPost = expressAsyncHandler(
 export const postNewPost: FormPOSTHandler = [
     body('title', 'Title must not be empty').trim().notEmpty().escape(),
 
-    body('category', 'Category must be one of the listed options').toLowerCase().isIn(categories),
+    body('category', 'Category must be one of the listed options').isIn(categories),
 
     body('text', 'Article cannot be empty')
         .trim()
@@ -91,7 +91,8 @@ export const postNewPost: FormPOSTHandler = [
             });
 
             await post.save();
-            res.status(201).json({ url: post.url });
+            await post.populate('author', 'name -_id');
+            res.status(201).json(post);
         }
     }),
 ];
@@ -100,15 +101,11 @@ export const postNewPost: FormPOSTHandler = [
     - PUT
 */
 export const editPost: FormPOSTHandler = [
-    body('title', 'Title must not be empty').optional().trim().notEmpty().escape(),
+    body('title', 'Title must not be empty').trim().notEmpty().escape(),
 
-    body('category', 'Category must be one of the listed options')
-        .toLowerCase()
-        .optional()
-        .isIn(categories),
+    body('category', 'Category must be one of the listed options').isIn(categories),
 
     body('text', 'Article cannot be empty')
-        .optional()
         .trim()
         .notEmpty()
         .escape()
@@ -153,7 +150,7 @@ export const editPost: FormPOSTHandler = [
 
                 const editedPost = await Post.findByIdAndUpdate(req.params.postID, postWithEdits, {
                     new: true,
-                });
+                }).populate('author', 'name -_id');
 
                 res.json(editedPost);
             }

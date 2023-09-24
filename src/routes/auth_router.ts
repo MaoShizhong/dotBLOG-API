@@ -6,12 +6,18 @@ export const authRouter = Router();
 /*
     - Handle user creation
 */
-authRouter.post('/signup', authController.createNewUser, authController.login);
+authRouter.post(
+    '/signup',
+    authController.createNewUser,
+    authController.attemptLogin,
+    authController.approveLogin
+);
 
 /*
     - Handle login
 */
-authRouter.post('/login', authController.login);
+
+authRouter.post('/login', authController.attemptLogin, authController.approveLogin);
 
 authRouter.get('/logout', authController.logout);
 

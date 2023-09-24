@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.authCommenter = exports.authAuthor = exports.authJWT = exports.refreshAccessToken = exports.logout = exports.login = exports.createNewUser = void 0;
+exports.authCommenter = exports.authAuthor = exports.authJWT = exports.refreshAccessToken = exports.logout = exports.approveLogin = exports.attemptLogin = exports.createNewUser = void 0;
 const User_1 = require("../models/User");
 const express_async_handler_1 = __importDefault(require("express-async-handler"));
 const express_validator_1 = require("express-validator");
@@ -26,8 +26,10 @@ const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 const UNAUTHORIZED = { message: 'Could not authenticate - access denied' };
+const NOT_AUTHOR = { message: 'Could not authenticate as an author - access denied' };
 const INCORRECT_LOGIN = { message: 'Incorrect username or password ' };
 const cookieOptions = { httpOnly: true, secure: true, sameSite: 'none' };
+const cmsOrigins = ['https://dotblog-cms.netlify.app', 'http://localhost:5174'];
 const expiry = {
     accessString: '10m',
     accessMS: 10 * 60 * 1000,
@@ -87,10 +89,10 @@ exports.createNewUser = createNewUser;
 /*
     - Login/logout
 */
-const login = [
+const attemptLogin = [
     (0, express_validator_1.body)('username', 'Username cannot be empty').notEmpty(),
     (0, express_validator_1.body)('password', 'Password cannot be empty').notEmpty(),
-    (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
         const errors = (0, express_validator_1.validationResult)(req);
         if (!errors.isEmpty()) {
             res.status(401).json(UNAUTHORIZED);
@@ -107,21 +109,36 @@ const login = [
             res.status(401).json(INCORRECT_LOGIN);
             return;
         }
-        const [accessToken, refreshToken] = (0, tokens_1.generateTokens)({
-            user: user,
-            secret: ACCESS_TOKEN_SECRET,
-            expiry: expiry.accessString,
-        }, {
-            user: user,
-            secret: REFRESH_TOKEN_SECRET,
-            expiry: expiry.refreshString,
-        });
-        res.cookie('access', accessToken, Object.assign(Object.assign({}, cookieOptions), { maxAge: expiry.accessMS }))
-            .cookie('refresh', refreshToken, Object.assign(Object.assign({}, cookieOptions), { maxAge: expiry.refreshMS }))
-            .json({ username: user.username });
+        if (!req.headers.origin) {
+            res.status(401).json(UNAUTHORIZED);
+            return;
+        }
+        if (cmsOrigins.includes(req.headers.origin) && !user.isAuthor) {
+            res.status(403).json(NOT_AUTHOR);
+        }
+        else {
+            req.user = user;
+            next();
+        }
     })),
 ];
-exports.login = login;
+exports.attemptLogin = attemptLogin;
+const approveLogin = (req, res) => {
+    const user = req.user;
+    const [accessToken, refreshToken] = (0, tokens_1.generateTokens)({
+        user: user,
+        secret: ACCESS_TOKEN_SECRET,
+        expiry: expiry.accessString,
+    }, {
+        user: user,
+        secret: REFRESH_TOKEN_SECRET,
+        expiry: expiry.refreshString,
+    });
+    res.cookie('access', accessToken, Object.assign(Object.assign({}, cookieOptions), { maxAge: expiry.accessMS }))
+        .cookie('refresh', refreshToken, Object.assign(Object.assign({}, cookieOptions), { maxAge: expiry.refreshMS }))
+        .json({ username: user.username });
+};
+exports.approveLogin = approveLogin;
 const logout = (req, res) => {
     const cookies = req.cookies;
     if (!cookies.refresh && !cookies.access) {

@@ -44,7 +44,12 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(
     cors({
-        origin: ['http://localhost:5173', 'https://mao-blog-cms.netlify.app'],
+        origin: [
+            'http://localhost:5173',
+            'http://localhost:5174',
+            'https://dotblog-cms.netlify.app/',
+            'https://dotblog.netlify.app/',
+        ],
         credentials: true,
         exposedHeaders: 'Authorization',
     })

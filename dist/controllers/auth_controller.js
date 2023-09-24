@@ -219,7 +219,10 @@ const refreshAccessToken = (req, res) => {
         });
         res.cookie('access', newAccessToken, Object.assign(Object.assign({}, cookieOptions), { maxAge: expiry.accessMS }))
             .cookie('refresh', newRefreshToken, Object.assign(Object.assign({}, cookieOptions), { maxAge: expiry.refreshMS }))
-            .json({ username: decodedUser.username, bookmarkedPosts: decodedUser.bookmarks });
+            .json({
+            username: decodedUser.username,
+            bookmarkedPosts: decodedUser.bookmarks,
+        });
     }
     catch (error) {
         res.status(401).json(exports.UNAUTHORIZED);

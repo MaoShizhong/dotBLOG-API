@@ -129,7 +129,6 @@ exports.editPost = [
             res.status(400).json(exports.INVALID_ID);
             return;
         }
-        console.log('publish', req.body.publish);
         const errors = (0, express_validator_1.validationResult)(req);
         if (!errors.isEmpty()) {
             res.status(400).json({

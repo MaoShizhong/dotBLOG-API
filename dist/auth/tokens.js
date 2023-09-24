@@ -10,7 +10,11 @@ const dotenv_1 = require("dotenv");
 function generateTokens(...tokens) {
     const signedJWTs = [];
     tokens.forEach((token) => {
-        signedJWTs.push(jsonwebtoken_1.default.sign({ username: token.user.username, isAuthor: token.user.isAuthor }, token.secret, { expiresIn: token.expiry }));
+        signedJWTs.push(jsonwebtoken_1.default.sign({
+            username: token.user.username,
+            bookmarks: token.user.bookmarks,
+            isAuthor: token.user.isAuthor,
+        }, token.secret, { expiresIn: token.expiry }));
     });
     return signedJWTs;
 }

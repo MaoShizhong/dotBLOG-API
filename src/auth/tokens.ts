@@ -16,7 +16,11 @@ export function generateTokens(...tokens: TokenInfo[]): string[] {
     tokens.forEach((token) => {
         signedJWTs.push(
             jwt.sign(
-                { username: token.user.username, isAuthor: token.user.isAuthor },
+                {
+                    username: token.user.username,
+                    bookmarks: token.user.bookmarks,
+                    isAuthor: token.user.isAuthor,
+                },
                 token.secret,
                 { expiresIn: token.expiry }
             )

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import expressAsyncHandler from 'express-async-handler';
 import { body, validationResult } from 'express-validator';
-import mongoose, { Types } from 'mongoose';
+import { Types } from 'mongoose';
 import { Comment, CommentModel } from '../models/Comment';
 import { INVALID_ID, DOES_NOT_EXIST, removeDangerousScriptTags } from './posts_controller';
 
@@ -21,10 +21,13 @@ export const getAllComments = expressAsyncHandler(
         };
 
         const allComments = await Comment.find(searchFilter)
-            .populate('comments')
+            .populate('commenter')
             .sort({ timestamp: -1 })
             .exec();
-        res.json(allComments);
+
+        const status = allComments.length ? 200 : 404;
+
+        res.status(status).json(allComments);
     }
 );
 
@@ -64,8 +67,8 @@ export const postNewComment: FormPOSTHandler = [
         } else {
             // Only create and store a new post if no errors
             const comment = new Comment<CommentModel>({
-                // TODO: Change when auth added for logged in reader!
-                commenter: new mongoose.Types.ObjectId('650884f8d099ae8404f13ffb'),
+                commenter: new Types.ObjectId(req.query.commenterID as string),
+                post: new Types.ObjectId(req.query.postID as string),
                 timestamp: new Date(),
                 text: req.body.text as string,
             });
@@ -105,6 +108,7 @@ export const editComment: FormPOSTHandler = [
                 const commentWithEdits = new Comment<CommentModel>({
                     _id: existingComment._id,
                     commenter: existingComment.commenter,
+                    post: existingComment.post,
                     timestamp: existingComment.timestamp,
                     text: req.body.text as string,
                 });

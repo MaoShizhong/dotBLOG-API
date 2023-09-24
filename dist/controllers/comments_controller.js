@@ -47,10 +47,12 @@ const posts_controller_1 = require("./posts_controller");
 exports.getAllComments = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const searchFilter = Object.assign(Object.assign({}, (req.params.postID && { post: req.params.postID })), (req.params.readerID && { commenter: req.params.readerID }));
     const allComments = yield Comment_1.Comment.find(searchFilter)
-        .populate('comments')
+        .populate('commenter')
         .sort({ timestamp: -1 })
         .exec();
-    res.json(allComments);
+    console.log(allComments);
+    const status = allComments.length ? 200 : 404;
+    res.status(status).json(allComments);
 }));
 exports.getSpecificComment = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     if (!mongoose_1.Types.ObjectId.isValid(req.params.commentID)) {
@@ -83,8 +85,8 @@ exports.postNewComment = [
         else {
             // Only create and store a new post if no errors
             const comment = new Comment_1.Comment({
-                // TODO: Change when auth added for logged in reader!
-                commenter: new mongoose_1.default.Types.ObjectId('650884f8d099ae8404f13ffb'),
+                commenter: new mongoose_1.default.Types.ObjectId(req.query.commenterID),
+                post: new mongoose_1.default.Types.ObjectId(req.query.postID),
                 timestamp: new Date(),
                 text: req.body.text,
             });
@@ -121,6 +123,7 @@ exports.editComment = [
                 const commentWithEdits = new Comment_1.Comment({
                     _id: existingComment._id,
                     commenter: existingComment.commenter,
+                    post: existingComment.post,
                     timestamp: existingComment.timestamp,
                     text: req.body.text,
                 });

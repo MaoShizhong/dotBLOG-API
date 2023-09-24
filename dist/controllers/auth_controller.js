@@ -68,6 +68,7 @@ const createNewUser = [
                     name: req.body.name || undefined,
                     username: req.body.username,
                     password: hashedPassword,
+                    bookmarks: [],
                     isAuthor: !!req.body.authorPassword,
                 });
                 yield user.save();
@@ -136,7 +137,7 @@ const approveLogin = (req, res) => {
     });
     res.cookie('access', accessToken, Object.assign(Object.assign({}, cookieOptions), { maxAge: expiry.accessMS }))
         .cookie('refresh', refreshToken, Object.assign(Object.assign({}, cookieOptions), { maxAge: expiry.refreshMS }))
-        .json({ username: user.username });
+        .json({ username: user.username, bookmarkedPosts: user.bookmarks });
 };
 exports.approveLogin = approveLogin;
 const logout = (req, res) => {
@@ -218,7 +219,7 @@ const refreshAccessToken = (req, res) => {
         });
         res.cookie('access', newAccessToken, Object.assign(Object.assign({}, cookieOptions), { maxAge: expiry.accessMS }))
             .cookie('refresh', newRefreshToken, Object.assign(Object.assign({}, cookieOptions), { maxAge: expiry.refreshMS }))
-            .json({ message: 'Tokens refreshed', username: decodedUser.username });
+            .json({ username: decodedUser.username, bookmarkedPosts: decodedUser.bookmarks });
     }
     catch (error) {
         res.status(401).json(exports.UNAUTHORIZED);

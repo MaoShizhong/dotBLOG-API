@@ -125,11 +125,11 @@ exports.editPost = [
         .optional({ values: undefined })
         .custom((value) => !!value),
     (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-        var _a, _b, _c;
         if (!mongoose_1.Types.ObjectId.isValid(req.params.postID)) {
             res.status(400).json(exports.INVALID_ID);
             return;
         }
+        console.log('publish', req.body.publish);
         const errors = (0, express_validator_1.validationResult)(req);
         if (!errors.isEmpty()) {
             res.status(400).json({
@@ -146,12 +146,12 @@ exports.editPost = [
                 const postWithEdits = new Post_1.Post({
                     _id: existingPost._id,
                     author: existingPost.author,
-                    title: (_a = req.body.title) !== null && _a !== void 0 ? _a : existingPost.title,
+                    title: req.body.title,
                     timestamp: existingPost.timestamp,
-                    category: (_b = req.body.category) !== null && _b !== void 0 ? _b : existingPost.category,
-                    text: (_c = req.body.text) !== null && _c !== void 0 ? _c : existingPost.text,
+                    category: req.body.category,
+                    text: req.body.text,
                     comments: existingPost.comments,
-                    isPublished: req.body.publish || existingPost.isPublished,
+                    isPublished: !!req.body.publish,
                     isFeatured: existingPost.isFeatured,
                 });
                 const editedPost = yield Post_1.Post.findByIdAndUpdate(req.params.postID, postWithEdits, {
@@ -192,7 +192,6 @@ const togglePublish = (req) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 const toggleFeature = (req) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log('feature');
     const [editedPost, existingFeaturedPosts] = yield Promise.all([
         Post_1.Post.findByIdAndUpdate(req.params.postID, { isFeatured: req.query.feature === 'true' }, { new: true })
             .populate('author', 'name -_id')

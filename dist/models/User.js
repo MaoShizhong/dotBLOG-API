@@ -6,6 +6,7 @@ const UserSchema = new mongoose_1.Schema({
     name: { type: String, default: undefined },
     username: { type: String, unique: true, required: true },
     password: { type: String, required: true },
+    bookmarks: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'Post' }],
     isAuthor: { type: Boolean, default: false, required: true },
 }, { versionKey: false });
 UserSchema.virtual('url').get(function () {

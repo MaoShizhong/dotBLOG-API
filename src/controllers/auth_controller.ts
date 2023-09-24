@@ -7,6 +7,7 @@ import bcrypt from 'bcrypt';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { configDotenv } from 'dotenv';
 import { Comment } from '../models/Comment';
+import { Types } from 'mongoose';
 
 export interface AuthenticatedRequest extends Request {
     user: UserModel;
@@ -72,6 +73,7 @@ const createNewUser: FormPOSTHandler = [
                     name: (req.body.name as string) || undefined,
                     username: req.body.username as string,
                     password: hashedPassword as string,
+                    bookmarks: [] as Types.ObjectId[],
                     isAuthor: !!req.body.authorPassword,
                 });
 
@@ -150,7 +152,7 @@ const approveLogin = (req: Request, res: Response): void => {
 
     res.cookie('access', accessToken, { ...cookieOptions, maxAge: expiry.accessMS })
         .cookie('refresh', refreshToken, { ...cookieOptions, maxAge: expiry.refreshMS })
-        .json({ username: user.username });
+        .json({ username: user.username, bookmarkedPosts: user.bookmarks });
 };
 
 const logout = (req: Request, res: Response): void => {
@@ -244,7 +246,7 @@ const refreshAccessToken = (req: Request, res: Response): void => {
 
         res.cookie('access', newAccessToken, { ...cookieOptions, maxAge: expiry.accessMS })
             .cookie('refresh', newRefreshToken, { ...cookieOptions, maxAge: expiry.refreshMS })
-            .json({ message: 'Tokens refreshed', username: decodedUser.username });
+            .json({ username: decodedUser.username, bookmarkedPosts: decodedUser.bookmarks });
     } catch (error) {
         res.status(401).json(UNAUTHORIZED);
     }

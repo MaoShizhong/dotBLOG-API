@@ -156,12 +156,12 @@ export const editPost: FormPOSTHandler = [
                 const postWithEdits = new Post<PostModel>({
                     _id: existingPost._id,
                     author: existingPost.author,
-                    title: req.body.title ?? existingPost.title,
+                    title: req.body.title as string,
                     timestamp: existingPost.timestamp,
-                    category: req.body.category ?? existingPost.category,
-                    text: req.body.text ?? existingPost.text,
+                    category: req.body.category as Category,
+                    text: req.body.text as string,
                     comments: existingPost.comments,
-                    isPublished: req.body.publish || existingPost.isPublished,
+                    isPublished: !!req.body.publish,
                     isFeatured: existingPost.isFeatured,
                 });
 
@@ -214,7 +214,6 @@ const togglePublish = async (req: Request): Promise<Array<PostModel | null>> => 
 };
 
 const toggleFeature = async (req: Request): Promise<Array<PostModel | PostModel[] | null>> => {
-    console.log('feature');
     const [editedPost, existingFeaturedPosts] = await Promise.all([
         Post.findByIdAndUpdate(
             req.params.postID,

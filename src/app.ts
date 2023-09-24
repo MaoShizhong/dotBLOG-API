@@ -47,8 +47,8 @@ app.use(
         origin: [
             'http://localhost:5173',
             'http://localhost:5174',
-            'https://dotblog-cms.netlify.app/',
-            'https://dotblog.netlify.app/',
+            'https://dotblog-cms.netlify.app',
+            'https://dotblog.netlify.app',
         ],
         credentials: true,
         exposedHeaders: 'Authorization',

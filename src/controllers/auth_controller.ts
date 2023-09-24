@@ -9,6 +9,7 @@ import { configDotenv } from 'dotenv';
 import { Comment } from '../models/Comment';
 
 export interface AuthenticatedRequest extends Request {
+    user: UserModel;
     username: string;
     isAuthor: boolean;
 }
@@ -19,9 +20,12 @@ const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET!;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD!;
 
 const UNAUTHORIZED = { message: 'Could not authenticate - access denied' } as const;
+const NOT_AUTHOR = { message: 'Could not authenticate as an author - access denied' } as const;
 const INCORRECT_LOGIN = { message: 'Incorrect username or password ' } as const;
 
 const cookieOptions: CookieOptions = { httpOnly: true, secure: true, sameSite: 'none' };
+
+const cmsOrigins = ['https://dotblog-cms.netlify.app', 'http://localhost:5174'];
 
 const expiry = {
     accessString: '10m',
@@ -90,11 +94,11 @@ const createNewUser: FormPOSTHandler = [
 /*
     - Login/logout
 */
-const login: FormPOSTHandler = [
+const attemptLogin: FormPOSTHandler = [
     body('username', 'Username cannot be empty').notEmpty(),
     body('password', 'Password cannot be empty').notEmpty(),
 
-    expressAsyncHandler(async (req: Request, res: Response): Promise<void> => {
+    expressAsyncHandler(async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             res.status(401).json(UNAUTHORIZED);
@@ -114,24 +118,40 @@ const login: FormPOSTHandler = [
             return;
         }
 
-        const [accessToken, refreshToken] = generateTokens(
-            {
-                user: user,
-                secret: ACCESS_TOKEN_SECRET,
-                expiry: expiry.accessString,
-            },
-            {
-                user: user,
-                secret: REFRESH_TOKEN_SECRET,
-                expiry: expiry.refreshString,
-            }
-        );
+        if (!req.headers.origin) {
+            res.status(401).json(UNAUTHORIZED);
+            return;
+        }
 
-        res.cookie('access', accessToken, { ...cookieOptions, maxAge: expiry.accessMS })
-            .cookie('refresh', refreshToken, { ...cookieOptions, maxAge: expiry.refreshMS })
-            .json({ username: user.username });
+        if (cmsOrigins.includes(req.headers.origin) && !user.isAuthor) {
+            res.status(403).json(NOT_AUTHOR);
+        } else {
+            (req as AuthenticatedRequest).user = user;
+            next();
+        }
     }),
 ];
+
+const approveLogin = (req: Request, res: Response): void => {
+    const user = (req as AuthenticatedRequest).user;
+
+    const [accessToken, refreshToken] = generateTokens(
+        {
+            user: user,
+            secret: ACCESS_TOKEN_SECRET,
+            expiry: expiry.accessString,
+        },
+        {
+            user: user,
+            secret: REFRESH_TOKEN_SECRET,
+            expiry: expiry.refreshString,
+        }
+    );
+
+    res.cookie('access', accessToken, { ...cookieOptions, maxAge: expiry.accessMS })
+        .cookie('refresh', refreshToken, { ...cookieOptions, maxAge: expiry.refreshMS })
+        .json({ username: user.username });
+};
 
 const logout = (req: Request, res: Response): void => {
     const cookies = req.cookies;
@@ -230,4 +250,13 @@ const refreshAccessToken = (req: Request, res: Response): void => {
     }
 };
 
-export { createNewUser, login, logout, refreshAccessToken, authJWT, authAuthor, authCommenter };
+export {
+    createNewUser,
+    attemptLogin,
+    approveLogin,
+    logout,
+    refreshAccessToken,
+    authJWT,
+    authAuthor,
+    authCommenter,
+};

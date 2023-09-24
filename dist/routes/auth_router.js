@@ -30,11 +30,11 @@ exports.authRouter = (0, express_1.Router)();
 /*
     - Handle user creation
 */
-exports.authRouter.post('/signup', authController.createNewUser, authController.login);
+exports.authRouter.post('/signup', authController.createNewUser, authController.attemptLogin, authController.approveLogin);
 /*
     - Handle login
 */
-exports.authRouter.post('/login', authController.login);
+exports.authRouter.post('/login', authController.attemptLogin, authController.approveLogin);
 exports.authRouter.get('/logout', authController.logout);
 /*
     - Handle JWTs

@@ -17,7 +17,12 @@ resourceRouter.post('/posts', authJWT, authAuthor, postsController.postNewPost);
 resourceRouter.put('/posts/:postID', authJWT, authAuthor, postsController.editPost);
 
 // For setting an unpublished post to published only
-resourceRouter.patch('/posts/:postID', authJWT, authAuthor, postsController.publishPost);
+resourceRouter.patch(
+    '/posts/:postID',
+    authJWT,
+    authAuthor,
+    postsController.toggleFeaturedPublished
+);
 
 resourceRouter.delete('/posts/:postID', authJWT, authAuthor, postsController.deletePost);
 

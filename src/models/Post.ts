@@ -1,6 +1,6 @@
 import { Schema, Types, model } from 'mongoose';
 
-export const categories = ['JavaScript/TypeScript', 'HTML', 'CSS', 'Other'] as const;
+export const categories = ['JavaScript', 'TypeScript', 'HTML', 'CSS', 'Other'] as const;
 
 export type Category = (typeof categories)[number];
 
@@ -10,9 +10,12 @@ export type PostModel = {
     title: string;
     timestamp: Date;
     category: Category;
-    text: string[];
+    text: string;
+    comments: Types.ObjectId[];
     isPublished: boolean;
+    isFeatured: boolean;
     url?: string;
+    clientURL?: string;
 };
 
 const PostSchema = new Schema<PostModel>(
@@ -26,14 +29,23 @@ const PostSchema = new Schema<PostModel>(
             enum: categories,
             default: 'Other',
         },
-        text: { type: [String], required: true },
-        isPublished: { type: Boolean, required: true },
+        text: { type: String, required: true },
+        comments: [{ type: Schema.Types.ObjectId, ref: 'comment' }],
+        isPublished: { type: Boolean, default: false, required: true },
+        isFeatured: { type: Boolean, default: false, required: true },
     },
     { toJSON: { virtuals: true }, versionKey: false }
 );
 
 PostSchema.virtual('url').get(function (): string {
     return `/posts/${this._id}`;
+});
+
+PostSchema.virtual('clientURL').get(function (): string {
+    const titleInURL = this.title.toLowerCase().replaceAll(' ', '-');
+    const categoryInURL = this.category.toLowerCase();
+
+    return `/${categoryInURL}/${titleInURL}`;
 });
 
 export const Post = model('post', PostSchema);

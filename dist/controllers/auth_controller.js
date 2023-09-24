@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.authCommenter = exports.authAuthor = exports.authJWT = exports.refreshAccessToken = exports.logout = exports.approveLogin = exports.attemptLogin = exports.createNewUser = void 0;
+exports.authCommenter = exports.authAuthor = exports.authJWT = exports.refreshAccessToken = exports.logout = exports.approveLogin = exports.attemptLogin = exports.createNewUser = exports.cmsOrigins = exports.UNAUTHORIZED = void 0;
 const User_1 = require("../models/User");
 const express_async_handler_1 = __importDefault(require("express-async-handler"));
 const express_validator_1 = require("express-validator");
@@ -25,11 +25,11 @@ const Comment_1 = require("../models/Comment");
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-const UNAUTHORIZED = { message: 'Could not authenticate - access denied' };
+exports.UNAUTHORIZED = { message: 'Could not authenticate - access denied' };
 const NOT_AUTHOR = { message: 'Could not authenticate as an author - access denied' };
 const INCORRECT_LOGIN = { message: 'Incorrect username or password ' };
 const cookieOptions = { httpOnly: true, secure: true, sameSite: 'none' };
-const cmsOrigins = ['https://dotblog-cms.netlify.app', 'http://localhost:5174'];
+exports.cmsOrigins = ['https://dotblog-cms.netlify.app', 'http://localhost:5174'];
 const expiry = {
     accessString: '10m',
     accessMS: 10 * 60 * 1000,
@@ -95,7 +95,7 @@ const attemptLogin = [
     (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
         const errors = (0, express_validator_1.validationResult)(req);
         if (!errors.isEmpty()) {
-            res.status(401).json(UNAUTHORIZED);
+            res.status(401).json(exports.UNAUTHORIZED);
             return;
         }
         const user = yield User_1.User.findOne({ username: req.body.username }).exec();
@@ -110,10 +110,10 @@ const attemptLogin = [
             return;
         }
         if (!req.headers.origin) {
-            res.status(401).json(UNAUTHORIZED);
+            res.status(401).json(exports.UNAUTHORIZED);
             return;
         }
-        if (cmsOrigins.includes(req.headers.origin) && !user.isAuthor) {
+        if (exports.cmsOrigins.includes(req.headers.origin) && !user.isAuthor) {
             res.status(403).json(NOT_AUTHOR);
         }
         else {
@@ -159,7 +159,7 @@ const authJWT = (req, res, next) => {
     var _a;
     const accessToken = (_a = req.cookies) === null || _a === void 0 ? void 0 : _a.access;
     if (!accessToken) {
-        res.status(401).json(UNAUTHORIZED);
+        res.status(401).json(exports.UNAUTHORIZED);
         return;
     }
     try {
@@ -171,14 +171,14 @@ const authJWT = (req, res, next) => {
     }
     catch (error) {
         console.error(error);
-        res.status(403).json(UNAUTHORIZED);
+        res.status(403).json(exports.UNAUTHORIZED);
     }
 };
 exports.authJWT = authJWT;
 const authAuthor = (req, res, next) => {
     const isAuthor = req === null || req === void 0 ? void 0 : req.isAuthor;
     if (!isAuthor) {
-        res.status(401).json(UNAUTHORIZED);
+        res.status(401).json(exports.UNAUTHORIZED);
     }
     else {
         next();
@@ -194,7 +194,7 @@ const authCommenter = (0, express_async_handler_1.default)((req, res, next) => _
         next();
     }
     else {
-        res.status(401).json(UNAUTHORIZED);
+        res.status(401).json(exports.UNAUTHORIZED);
     }
 }));
 exports.authCommenter = authCommenter;
@@ -202,7 +202,7 @@ const refreshAccessToken = (req, res) => {
     var _a;
     const refreshToken = (_a = req.cookies) === null || _a === void 0 ? void 0 : _a.refresh;
     if (!refreshToken) {
-        res.status(401).json(UNAUTHORIZED);
+        res.status(401).json(exports.UNAUTHORIZED);
         return;
     }
     try {
@@ -221,7 +221,7 @@ const refreshAccessToken = (req, res) => {
             .json({ message: 'Tokens refreshed', username: decodedUser.username });
     }
     catch (error) {
-        res.status(401).json(UNAUTHORIZED);
+        res.status(401).json(exports.UNAUTHORIZED);
     }
 };
 exports.refreshAccessToken = refreshAccessToken;

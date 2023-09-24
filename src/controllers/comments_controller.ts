@@ -3,12 +3,7 @@ import expressAsyncHandler from 'express-async-handler';
 import { body, validationResult } from 'express-validator';
 import mongoose, { Types } from 'mongoose';
 import { Comment, CommentModel } from '../models/Comment';
-import {
-    INVALID_ID,
-    DOES_NOT_EXIST,
-    convertToArrayOfParagraphs,
-    removeDangerousScriptTags,
-} from './posts_controller';
+import { INVALID_ID, DOES_NOT_EXIST, removeDangerousScriptTags } from './posts_controller';
 
 type Query = {
     post?: string;
@@ -25,7 +20,10 @@ export const getAllComments = expressAsyncHandler(
             ...(req.params.readerID && { commenter: req.params.readerID }),
         };
 
-        const allComments = await Comment.find(searchFilter).sort({ timestamp: -1 }).exec();
+        const allComments = await Comment.find(searchFilter)
+            .populate('comments')
+            .sort({ timestamp: -1 })
+            .exec();
         res.json(allComments);
     }
 );
@@ -54,8 +52,7 @@ export const postNewComment: FormPOSTHandler = [
     body('text', 'Comment cannot be empty')
         .trim()
         .notEmpty()
-        .customSanitizer(removeDangerousScriptTags)
-        .customSanitizer(convertToArrayOfParagraphs),
+        .customSanitizer(removeDangerousScriptTags),
 
     expressAsyncHandler(async (req: Request, res: Response): Promise<void> => {
         const errors = validationResult(req);
@@ -67,11 +64,10 @@ export const postNewComment: FormPOSTHandler = [
         } else {
             // Only create and store a new post if no errors
             const comment = new Comment<CommentModel>({
-                post: new mongoose.Types.ObjectId(req.params.postID),
                 // TODO: Change when auth added for logged in reader!
                 commenter: new mongoose.Types.ObjectId('650884f8d099ae8404f13ffb'),
                 timestamp: new Date(),
-                text: req.body.text as string[],
+                text: req.body.text as string,
             });
 
             await comment.save();
@@ -87,8 +83,7 @@ export const editComment: FormPOSTHandler = [
     body('text', 'Comment cannot be empty')
         .trim()
         .notEmpty()
-        .customSanitizer(removeDangerousScriptTags)
-        .customSanitizer(convertToArrayOfParagraphs),
+        .customSanitizer(removeDangerousScriptTags),
 
     expressAsyncHandler(async (req: Request, res: Response): Promise<void> => {
         if (!Types.ObjectId.isValid(req.params.commentID)) {
@@ -109,10 +104,9 @@ export const editComment: FormPOSTHandler = [
             } else {
                 const commentWithEdits = new Comment<CommentModel>({
                     _id: existingComment._id,
-                    post: existingComment.post,
                     commenter: existingComment.commenter,
                     timestamp: existingComment.timestamp,
-                    text: req.body.text as string[],
+                    text: req.body.text as string,
                 });
 
                 const editedComment = await Comment.findByIdAndUpdate(

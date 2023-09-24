@@ -4,7 +4,7 @@ import { categories, Category, Post, PostModel } from '../models/Post';
 import expressAsyncHandler from 'express-async-handler';
 import { Types } from 'mongoose';
 import { User } from '../models/User';
-import { AuthenticatedRequest } from './auth_controller';
+import { AuthenticatedRequest, cmsOrigins, UNAUTHORIZED } from './auth_controller';
 
 export const INVALID_ID = { message: 'Failed to fetch - invalid ID format' } as const;
 export const INVALID_QUERY = { message: 'Failed to fetch - invalid query' } as const;
@@ -15,8 +15,11 @@ export const DOES_NOT_EXIST = { message: 'Failed to fetch - no resource with tha
 */
 export const getAllPosts = expressAsyncHandler(
     async (req: Request, res: Response): Promise<void> => {
+        // Show unpublished posts only if viewing from CMS site
+        const filter = cmsOrigins.includes(req.headers.origin!) ? {} : { isPublished: true };
+
         // Show newest posts first
-        const posts = await Post.find()
+        const posts = await Post.find(filter)
             .populate('author', '-_id name username')
             .sort({ timestamp: -1 })
             .exec();
@@ -33,10 +36,20 @@ export const getSpecificPost = expressAsyncHandler(
             return;
         }
 
+        if (!req.headers.origin) {
+            res.status(401).json(UNAUTHORIZED);
+            return;
+        }
+
         const post = await Post.findById(req.params.postID).populate('author', 'name -_id').exec();
 
         if (post) {
-            res.json(post);
+            // Prevent showing unpublished posts on main client
+            if (!post.isPublished && !cmsOrigins.includes(req.headers.origin)) {
+                res.status(403).json(UNAUTHORIZED);
+            } else {
+                res.json(post);
+            }
         } else {
             res.status(404).json(DOES_NOT_EXIST);
         }
@@ -86,11 +99,16 @@ export const postNewPost: FormPOSTHandler = [
                 title: req.body.title as string,
                 timestamp: new Date(),
                 category: req.body.category as Category,
-                text: req.body.text as string[],
+                text: req.body.text as string,
+                comments: [],
                 isPublished: !!req.body.publish as boolean,
+                isFeatured: false,
             });
 
             await post.save();
+
+            // So CMS can redirect straight to new post individual page and
+            // already have the author name to show
             await post.populate('author', 'name -_id');
             res.status(201).json(post);
         }
@@ -142,7 +160,9 @@ export const editPost: FormPOSTHandler = [
                     timestamp: existingPost.timestamp,
                     category: req.body.category ?? existingPost.category,
                     text: req.body.text ?? existingPost.text,
+                    comments: existingPost.comments,
                     isPublished: req.body.publish || existingPost.isPublished,
+                    isFeatured: existingPost.isFeatured,
                 });
 
                 const editedPost = await Post.findByIdAndUpdate(req.params.postID, postWithEdits, {
@@ -158,33 +178,62 @@ export const editPost: FormPOSTHandler = [
 /*
     - PATCH
 */
-export const publishPost = expressAsyncHandler(
+export const toggleFeaturedPublished = expressAsyncHandler(
     async (req: Request, res: Response): Promise<void> => {
-        if (
-            !Types.ObjectId.isValid(req.params.postID) ||
-            !['true', 'false'].includes(req.query.publish as string)
-        ) {
-            const message = !Types.ObjectId.isValid(req.params.postID) ? INVALID_ID : INVALID_QUERY;
-
-            res.status(400).json(message);
+        if (!Types.ObjectId.isValid(req.params.postID)) {
+            res.status(400).json(INVALID_ID);
             return;
         }
 
-        const editedPost = await Post.findByIdAndUpdate(
-            req.params.postID,
-            { isPublished: req.query.publish === 'true' },
-            { new: true }
-        )
-            .populate('author', 'name -_id')
-            .exec();
+        const [editedPost, existingFeaturedPosts] = req.query.publish
+            ? await togglePublish(req)
+            : await toggleFeature(req);
 
         if (!editedPost) {
             res.status(404).json(DOES_NOT_EXIST);
         } else {
-            res.json(editedPost);
+            res.json({ editedPost, existingFeaturedPosts });
         }
     }
 );
+
+const togglePublish = async (req: Request): Promise<Array<PostModel | null>> => {
+    const editedPost = await Post.findByIdAndUpdate(
+        req.params.postID,
+        { isPublished: req.query.publish === 'true' },
+        { new: true }
+    )
+        .populate('author', 'name -_id')
+        .exec();
+
+    if (editedPost) {
+        return [editedPost, null];
+    } else {
+        return [null, null];
+    }
+};
+
+const toggleFeature = async (req: Request): Promise<Array<PostModel | PostModel[] | null>> => {
+    console.log('feature');
+    const [editedPost, existingFeaturedPosts] = await Promise.all([
+        Post.findByIdAndUpdate(
+            req.params.postID,
+            { isFeatured: req.query.feature === 'true' },
+            { new: true }
+        )
+            .populate('author', 'name -_id')
+            .exec(),
+        Post.find({ _id: { $ne: req.params.postID }, isFeatured: true }).exec(),
+    ]);
+
+    if (!editedPost) {
+        return [null, null];
+    } else if (req.query.feature === 'true') {
+        return [editedPost, existingFeaturedPosts];
+    } else {
+        return [editedPost, null];
+    }
+};
 
 /*
     - DELETE
@@ -208,9 +257,4 @@ export const deletePost = expressAsyncHandler(
 
 export function removeDangerousScriptTags(text: string): string {
     return text.replaceAll(/(<script>)|(<\/script>)|(?<=<script>)(.|\[^.])*(?=<\/script>)/g, '\n');
-}
-
-export function convertToArrayOfParagraphs(text: string): string[] {
-    // Convert text into array of paragraphs
-    return text.replaceAll('\r', '').replaceAll(/\n+/g, '\n').split('\n');
 }

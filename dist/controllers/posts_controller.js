@@ -12,12 +12,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.convertToArrayOfParagraphs = exports.removeDangerousScriptTags = exports.deletePost = exports.publishPost = exports.editPost = exports.postNewPost = exports.getSpecificPost = exports.getAllPosts = exports.DOES_NOT_EXIST = exports.INVALID_QUERY = exports.INVALID_ID = void 0;
+exports.removeDangerousScriptTags = exports.deletePost = exports.toggleFeaturedPublished = exports.editPost = exports.postNewPost = exports.getSpecificPost = exports.getAllPosts = exports.DOES_NOT_EXIST = exports.INVALID_QUERY = exports.INVALID_ID = void 0;
 const express_validator_1 = require("express-validator");
 const Post_1 = require("../models/Post");
 const express_async_handler_1 = __importDefault(require("express-async-handler"));
 const mongoose_1 = require("mongoose");
 const User_1 = require("../models/User");
+const auth_controller_1 = require("./auth_controller");
 exports.INVALID_ID = { message: 'Failed to fetch - invalid ID format' };
 exports.INVALID_QUERY = { message: 'Failed to fetch - invalid query' };
 exports.DOES_NOT_EXIST = { message: 'Failed to fetch - no resource with that ID' };
@@ -25,8 +26,10 @@ exports.DOES_NOT_EXIST = { message: 'Failed to fetch - no resource with that ID'
     - GET
 */
 exports.getAllPosts = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    // Show unpublished posts only if viewing from CMS site
+    const filter = auth_controller_1.cmsOrigins.includes(req.headers.origin) ? {} : { isPublished: true };
     // Show newest posts first
-    const posts = yield Post_1.Post.find()
+    const posts = yield Post_1.Post.find(filter)
         .populate('author', '-_id name username')
         .sort({ timestamp: -1 })
         .exec();
@@ -38,9 +41,19 @@ exports.getSpecificPost = (0, express_async_handler_1.default)((req, res) => __a
         res.status(400).json(exports.INVALID_ID);
         return;
     }
+    if (!req.headers.origin) {
+        res.status(401).json(auth_controller_1.UNAUTHORIZED);
+        return;
+    }
     const post = yield Post_1.Post.findById(req.params.postID).populate('author', 'name -_id').exec();
     if (post) {
-        res.json(post);
+        // Prevent showing unpublished posts on main client
+        if (!post.isPublished && !auth_controller_1.cmsOrigins.includes(req.headers.origin)) {
+            res.status(403).json(auth_controller_1.UNAUTHORIZED);
+        }
+        else {
+            res.json(post);
+        }
     }
     else {
         res.status(404).json(exports.DOES_NOT_EXIST);
@@ -84,9 +97,13 @@ exports.postNewPost = [
                 timestamp: new Date(),
                 category: req.body.category,
                 text: req.body.text,
+                comments: [],
                 isPublished: !!req.body.publish,
+                isFeatured: false,
             });
             yield post.save();
+            // So CMS can redirect straight to new post individual page and
+            // already have the author name to show
             yield post.populate('author', 'name -_id');
             res.status(201).json(post);
         }
@@ -133,7 +150,9 @@ exports.editPost = [
                     timestamp: existingPost.timestamp,
                     category: (_b = req.body.category) !== null && _b !== void 0 ? _b : existingPost.category,
                     text: (_c = req.body.text) !== null && _c !== void 0 ? _c : existingPost.text,
+                    comments: existingPost.comments,
                     isPublished: req.body.publish || existingPost.isPublished,
+                    isFeatured: existingPost.isFeatured,
                 });
                 const editedPost = yield Post_1.Post.findByIdAndUpdate(req.params.postID, postWithEdits, {
                     new: true,
@@ -146,23 +165,50 @@ exports.editPost = [
 /*
     - PATCH
 */
-exports.publishPost = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    if (!mongoose_1.Types.ObjectId.isValid(req.params.postID) ||
-        !['true', 'false'].includes(req.query.publish)) {
-        const message = !mongoose_1.Types.ObjectId.isValid(req.params.postID) ? exports.INVALID_ID : exports.INVALID_QUERY;
-        res.status(400).json(message);
+exports.toggleFeaturedPublished = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!mongoose_1.Types.ObjectId.isValid(req.params.postID)) {
+        res.status(400).json(exports.INVALID_ID);
         return;
     }
-    const editedPost = yield Post_1.Post.findByIdAndUpdate(req.params.postID, { isPublished: req.query.publish === 'true' }, { new: true })
-        .populate('author', 'name -_id')
-        .exec();
+    const [editedPost, existingFeaturedPosts] = req.query.publish
+        ? yield togglePublish(req)
+        : yield toggleFeature(req);
     if (!editedPost) {
         res.status(404).json(exports.DOES_NOT_EXIST);
     }
     else {
-        res.json(editedPost);
+        res.json({ editedPost, existingFeaturedPosts });
     }
 }));
+const togglePublish = (req) => __awaiter(void 0, void 0, void 0, function* () {
+    const editedPost = yield Post_1.Post.findByIdAndUpdate(req.params.postID, { isPublished: req.query.publish === 'true' }, { new: true })
+        .populate('author', 'name -_id')
+        .exec();
+    if (editedPost) {
+        return [editedPost, null];
+    }
+    else {
+        return [null, null];
+    }
+});
+const toggleFeature = (req) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log('feature');
+    const [editedPost, existingFeaturedPosts] = yield Promise.all([
+        Post_1.Post.findByIdAndUpdate(req.params.postID, { isFeatured: req.query.feature === 'true' }, { new: true })
+            .populate('author', 'name -_id')
+            .exec(),
+        Post_1.Post.find({ _id: { $ne: req.params.postID }, isFeatured: true }).exec(),
+    ]);
+    if (!editedPost) {
+        return [null, null];
+    }
+    else if (req.query.feature === 'true') {
+        return [editedPost, existingFeaturedPosts];
+    }
+    else {
+        return [editedPost, null];
+    }
+});
 /*
     - DELETE
 */
@@ -183,8 +229,3 @@ function removeDangerousScriptTags(text) {
     return text.replaceAll(/(<script>)|(<\/script>)|(?<=<script>)(.|\[^.])*(?=<\/script>)/g, '\n');
 }
 exports.removeDangerousScriptTags = removeDangerousScriptTags;
-function convertToArrayOfParagraphs(text) {
-    // Convert text into array of paragraphs
-    return text.replaceAll('\r', '').replaceAll(/\n+/g, '\n').split('\n');
-}
-exports.convertToArrayOfParagraphs = convertToArrayOfParagraphs;

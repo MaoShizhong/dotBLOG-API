@@ -46,7 +46,10 @@ const posts_controller_1 = require("./posts_controller");
 */
 exports.getAllComments = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const searchFilter = Object.assign(Object.assign({}, (req.params.postID && { post: req.params.postID })), (req.params.readerID && { commenter: req.params.readerID }));
-    const allComments = yield Comment_1.Comment.find(searchFilter).sort({ timestamp: -1 }).exec();
+    const allComments = yield Comment_1.Comment.find(searchFilter)
+        .populate('comments')
+        .sort({ timestamp: -1 })
+        .exec();
     res.json(allComments);
 }));
 exports.getSpecificComment = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -69,8 +72,7 @@ exports.postNewComment = [
     (0, express_validator_1.body)('text', 'Comment cannot be empty')
         .trim()
         .notEmpty()
-        .customSanitizer(posts_controller_1.removeDangerousScriptTags)
-        .customSanitizer(posts_controller_1.convertToArrayOfParagraphs),
+        .customSanitizer(posts_controller_1.removeDangerousScriptTags),
     (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const errors = (0, express_validator_1.validationResult)(req);
         if (!errors.isEmpty()) {
@@ -81,7 +83,6 @@ exports.postNewComment = [
         else {
             // Only create and store a new post if no errors
             const comment = new Comment_1.Comment({
-                post: new mongoose_1.default.Types.ObjectId(req.params.postID),
                 // TODO: Change when auth added for logged in reader!
                 commenter: new mongoose_1.default.Types.ObjectId('650884f8d099ae8404f13ffb'),
                 timestamp: new Date(),
@@ -99,8 +100,7 @@ exports.editComment = [
     (0, express_validator_1.body)('text', 'Comment cannot be empty')
         .trim()
         .notEmpty()
-        .customSanitizer(posts_controller_1.removeDangerousScriptTags)
-        .customSanitizer(posts_controller_1.convertToArrayOfParagraphs),
+        .customSanitizer(posts_controller_1.removeDangerousScriptTags),
     (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (!mongoose_1.Types.ObjectId.isValid(req.params.commentID)) {
             res.status(400).json(posts_controller_1.INVALID_ID);
@@ -120,7 +120,6 @@ exports.editComment = [
             else {
                 const commentWithEdits = new Comment_1.Comment({
                     _id: existingComment._id,
-                    post: existingComment.post,
                     commenter: existingComment.commenter,
                     timestamp: existingComment.timestamp,
                     text: req.body.text,

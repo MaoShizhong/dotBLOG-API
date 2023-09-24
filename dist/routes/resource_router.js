@@ -37,7 +37,7 @@ exports.resourceRouter.get('/posts/:postID', postsController.getSpecificPost);
 exports.resourceRouter.post('/posts', auth_controller_1.authJWT, auth_controller_1.authAuthor, postsController.postNewPost);
 exports.resourceRouter.put('/posts/:postID', auth_controller_1.authJWT, auth_controller_1.authAuthor, postsController.editPost);
 // For setting an unpublished post to published only
-exports.resourceRouter.patch('/posts/:postID', auth_controller_1.authJWT, auth_controller_1.authAuthor, postsController.publishPost);
+exports.resourceRouter.patch('/posts/:postID', auth_controller_1.authJWT, auth_controller_1.authAuthor, postsController.toggleFeaturedPublished);
 exports.resourceRouter.delete('/posts/:postID', auth_controller_1.authJWT, auth_controller_1.authAuthor, postsController.deletePost);
 /*
     - Handle comments

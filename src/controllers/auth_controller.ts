@@ -19,13 +19,13 @@ const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET!;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET!;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD!;
 
-const UNAUTHORIZED = { message: 'Could not authenticate - access denied' } as const;
+export const UNAUTHORIZED = { message: 'Could not authenticate - access denied' } as const;
 const NOT_AUTHOR = { message: 'Could not authenticate as an author - access denied' } as const;
 const INCORRECT_LOGIN = { message: 'Incorrect username or password ' } as const;
 
 const cookieOptions: CookieOptions = { httpOnly: true, secure: true, sameSite: 'none' };
 
-const cmsOrigins = ['https://dotblog-cms.netlify.app', 'http://localhost:5174'];
+export const cmsOrigins = ['https://dotblog-cms.netlify.app', 'http://localhost:5174'];
 
 const expiry = {
     accessString: '10m',

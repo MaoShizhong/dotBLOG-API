@@ -11,6 +11,7 @@ function generateTokens(...tokens) {
     const signedJWTs = [];
     tokens.forEach((token) => {
         signedJWTs.push(jsonwebtoken_1.default.sign({
+            _id: token.user._id,
             username: token.user.username,
             bookmarks: token.user.bookmarks,
             isAuthor: token.user.isAuthor,

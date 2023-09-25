@@ -137,7 +137,7 @@ const approveLogin = (req, res) => {
     });
     res.cookie('access', accessToken, Object.assign(Object.assign({}, cookieOptions), { maxAge: expiry.accessMS }))
         .cookie('refresh', refreshToken, Object.assign(Object.assign({}, cookieOptions), { maxAge: expiry.refreshMS }))
-        .json({ username: user.username, bookmarkedPosts: user.bookmarks });
+        .json({ id: user._id, username: user.username, bookmarkedPosts: user.bookmarks });
 };
 exports.approveLogin = approveLogin;
 const logout = (req, res) => {
@@ -208,6 +208,9 @@ const refreshAccessToken = (req, res) => {
     }
     try {
         const decodedUser = jsonwebtoken_1.default.verify(refreshToken, REFRESH_TOKEN_SECRET);
+        if (req.bookmarks) {
+            decodedUser.bookmarks = req.bookmarks;
+        }
         const [newAccessToken, newRefreshToken] = (0, tokens_1.generateTokens)({
             user: decodedUser,
             secret: ACCESS_TOKEN_SECRET,
@@ -220,6 +223,7 @@ const refreshAccessToken = (req, res) => {
         res.cookie('access', newAccessToken, Object.assign(Object.assign({}, cookieOptions), { maxAge: expiry.accessMS }))
             .cookie('refresh', newRefreshToken, Object.assign(Object.assign({}, cookieOptions), { maxAge: expiry.refreshMS }))
             .json({
+            id: decodedUser._id,
             username: decodedUser.username,
             bookmarkedPosts: decodedUser.bookmarks,
         });

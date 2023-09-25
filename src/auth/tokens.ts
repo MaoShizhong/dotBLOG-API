@@ -17,6 +17,7 @@ export function generateTokens(...tokens: TokenInfo[]): string[] {
         signedJWTs.push(
             jwt.sign(
                 {
+                    _id: token.user._id,
                     username: token.user.username,
                     bookmarks: token.user.bookmarks,
                     isAuthor: token.user.isAuthor,

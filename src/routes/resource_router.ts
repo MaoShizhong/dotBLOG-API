@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import * as postsController from '../controllers/posts_controller';
 import * as commentsController from '../controllers/comments_controller';
+import * as userController from '../controllers/user_controller';
+import { refreshAccessToken } from '../controllers/auth_controller';
 import { authJWT, authAuthor, authCommenter } from '../controllers/auth_controller';
 
 export const resourceRouter = Router();
@@ -31,7 +33,7 @@ resourceRouter.delete('/posts/:postID', authJWT, authAuthor, postsController.del
 */
 resourceRouter.get('/posts/:postID/comments', commentsController.getAllComments);
 
-resourceRouter.get('/readers/:readerID/comments', commentsController.getAllComments);
+resourceRouter.get('/users/:userID/comments', commentsController.getAllComments);
 
 resourceRouter.post(
     '/posts/:postID/comments',
@@ -50,3 +52,10 @@ resourceRouter.delete(
     authCommenter,
     commentsController.deleteComment
 );
+
+/*
+    - Handle user edit/delete
+*/
+// Refresh after patching bookmark to update cookies with updated bookmark data (else refreshing
+// the site will load the outdated bookmark data into state)
+resourceRouter.patch('/users/:userID', authJWT, userController.toggleBookmark, refreshAccessToken);

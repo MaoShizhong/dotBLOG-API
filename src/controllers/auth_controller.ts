@@ -12,6 +12,7 @@ import { Types } from 'mongoose';
 export interface AuthenticatedRequest extends Request {
     user: UserModel;
     username: string;
+    bookmarks: Types.ObjectId[];
     isAuthor: boolean;
 }
 
@@ -152,7 +153,7 @@ const approveLogin = (req: Request, res: Response): void => {
 
     res.cookie('access', accessToken, { ...cookieOptions, maxAge: expiry.accessMS })
         .cookie('refresh', refreshToken, { ...cookieOptions, maxAge: expiry.refreshMS })
-        .json({ username: user.username, bookmarkedPosts: user.bookmarks });
+        .json({ id: user._id, username: user.username, bookmarkedPosts: user.bookmarks });
 };
 
 const logout = (req: Request, res: Response): void => {
@@ -231,6 +232,10 @@ const refreshAccessToken = (req: Request, res: Response): void => {
     try {
         const decodedUser = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET) as JwtPayload;
 
+        if ((req as AuthenticatedRequest).bookmarks) {
+            decodedUser.bookmarks = (req as AuthenticatedRequest).bookmarks;
+        }
+
         const [newAccessToken, newRefreshToken] = generateTokens(
             {
                 user: decodedUser,
@@ -247,6 +252,7 @@ const refreshAccessToken = (req: Request, res: Response): void => {
         res.cookie('access', newAccessToken, { ...cookieOptions, maxAge: expiry.accessMS })
             .cookie('refresh', newRefreshToken, { ...cookieOptions, maxAge: expiry.refreshMS })
             .json({
+                id: decodedUser._id,
                 username: decodedUser.username,
                 bookmarkedPosts: decodedUser.bookmarks,
             });

@@ -4,11 +4,14 @@ import { body, validationResult } from 'express-validator';
 import { Types } from 'mongoose';
 import { Comment, CommentModel } from '../models/Comment';
 import { INVALID_ID, DOES_NOT_EXIST, removeDangerousScriptTags } from './posts_controller';
+import { Post } from '../models/Post';
 
 type Query = {
     post?: string;
     commenter?: string;
 };
+
+const DATABASE_UPDATE_ERROR = { message: 'Error updating database' };
 
 /*
     - GET
@@ -21,11 +24,13 @@ export const getAllComments = expressAsyncHandler(
         };
 
         const allComments = await Comment.find(searchFilter)
-            .populate('commenter')
+            .populate('commenter', 'username -_id')
             .sort({ timestamp: -1 })
             .exec();
 
         const status = allComments.length ? 200 : 404;
+
+        console.log(allComments);
 
         res.status(status).json(allComments);
     }
@@ -55,6 +60,7 @@ export const postNewComment: FormPOSTHandler = [
     body('text', 'Comment cannot be empty')
         .trim()
         .notEmpty()
+        .escape()
         .customSanitizer(removeDangerousScriptTags),
 
     expressAsyncHandler(async (req: Request, res: Response): Promise<void> => {
@@ -66,15 +72,32 @@ export const postNewComment: FormPOSTHandler = [
             });
         } else {
             // Only create and store a new post if no errors
+            // lastEdited is undefined at creation
             const comment = new Comment<CommentModel>({
                 commenter: new Types.ObjectId(req.query.commenterID as string),
-                post: new Types.ObjectId(req.query.postID as string),
+                post: new Types.ObjectId(req.params.postID as string),
                 timestamp: new Date(),
                 text: req.body.text as string,
+                replies: [],
             });
 
-            await comment.save();
-            res.status(201).json(comment);
+            const [savedComment, updatedPost] = await Promise.all([
+                comment.save(),
+                Post.findOneAndUpdate(
+                    { _id: req.params.postID },
+                    { $inc: { commentCount: 1 } },
+                    { new: true }
+                ).exec(),
+            ]);
+
+            if (savedComment && updatedPost) {
+                res.status(201).json({
+                    newComment: savedComment,
+                    newCommentCount: updatedPost.commentCount,
+                });
+            } else {
+                res.status(500).json(DATABASE_UPDATE_ERROR);
+            }
         }
     }),
 ];
@@ -110,7 +133,9 @@ export const editComment: FormPOSTHandler = [
                     commenter: existingComment.commenter,
                     post: existingComment.post,
                     timestamp: existingComment.timestamp,
+                    lastEdited: new Date(),
                     text: req.body.text as string,
+                    replies: existingComment.replies,
                 });
 
                 const editedComment = await Comment.findByIdAndUpdate(
@@ -140,6 +165,10 @@ export const deleteComment = expressAsyncHandler(
         if (!deletedComment) {
             res.status(404).json(DOES_NOT_EXIST);
         } else {
+            await Post.findByIdAndUpdate(deletedComment.post, {
+                $inc: { commentCount: -1 },
+            }).exec();
+
             res.status(204).json(deletedComment);
         }
     }

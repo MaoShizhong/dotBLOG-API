@@ -11,7 +11,7 @@ export type PostModel = {
     timestamp: Date;
     category: Category;
     text: string;
-    comments: Types.ObjectId[];
+    commentCount: number;
     isPublished: boolean;
     isFeatured: boolean;
     url?: string;
@@ -30,7 +30,7 @@ const PostSchema = new Schema<PostModel>(
             default: 'Other',
         },
         text: { type: String, required: true },
-        comments: [{ type: Schema.Types.ObjectId, ref: 'comment' }],
+        commentCount: { type: Number, default: 0, required: true },
         isPublished: { type: Boolean, default: false, required: true },
         isFeatured: { type: Boolean, default: false, required: true },
     },
@@ -45,7 +45,7 @@ PostSchema.virtual('clientURL').get(function (): string {
     const titleInURL = this.title.toLowerCase().replaceAll(' ', '-');
     const categoryInURL = this.category.toLowerCase();
 
-    return `/${categoryInURL}/${titleInURL}`;
+    return `/${categoryInURL}/${titleInURL}_${this._id}`;
 });
 
 export const Post = model('post', PostSchema);

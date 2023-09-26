@@ -3,7 +3,11 @@ import * as postsController from '../controllers/posts_controller';
 import * as commentsController from '../controllers/comments_controller';
 import * as userController from '../controllers/user_controller';
 import { refreshAccessToken } from '../controllers/auth_controller';
-import { authJWT, authAuthor, authCommenter } from '../controllers/auth_controller';
+import {
+    authenticateJWT,
+    authenticateAuthor,
+    authenticateCommenter,
+} from '../controllers/auth_controller';
 
 export const resourceRouter = Router();
 
@@ -14,19 +18,24 @@ resourceRouter.get('/posts', postsController.getAllPosts);
 
 resourceRouter.get('/posts/:postID', postsController.getSpecificPost);
 
-resourceRouter.post('/posts', authJWT, authAuthor, postsController.postNewPost);
+resourceRouter.post('/posts', authenticateJWT, authenticateAuthor, postsController.postNewPost);
 
-resourceRouter.put('/posts/:postID', authJWT, authAuthor, postsController.editPost);
+resourceRouter.put('/posts/:postID', authenticateJWT, authenticateAuthor, postsController.editPost);
 
 // For setting an unpublished post to published only
 resourceRouter.patch(
     '/posts/:postID',
-    authJWT,
-    authAuthor,
+    authenticateJWT,
+    authenticateAuthor,
     postsController.toggleFeaturedPublished
 );
 
-resourceRouter.delete('/posts/:postID', authJWT, authAuthor, postsController.deletePost);
+resourceRouter.delete(
+    '/posts/:postID',
+    authenticateJWT,
+    authenticateAuthor,
+    postsController.deletePost
+);
 
 /*
     - Handle comments
@@ -35,21 +44,21 @@ resourceRouter.get('/posts/:postID/comments', commentsController.getAllComments)
 
 resourceRouter.get('/users/:userID/comments', commentsController.getAllComments);
 
-resourceRouter.post(
-    '/posts/:postID/comments',
-    authJWT,
-    authCommenter,
-    commentsController.postNewComment
-);
+resourceRouter.post('/posts/:postID/comments', authenticateJWT, commentsController.postNewComment);
 
 resourceRouter.get('/comments/:commentID', commentsController.getSpecificComment);
 
-resourceRouter.put('/comments/:commentID', authJWT, authCommenter, commentsController.editComment);
+resourceRouter.put(
+    '/comments/:commentID',
+    authenticateJWT,
+    authenticateCommenter,
+    commentsController.editComment
+);
 
 resourceRouter.delete(
     '/comments/:commentID',
-    authJWT,
-    authCommenter,
+    authenticateJWT,
+    authenticateCommenter,
     commentsController.deleteComment
 );
 
@@ -58,4 +67,9 @@ resourceRouter.delete(
 */
 // Refresh after patching bookmark to update cookies with updated bookmark data (else refreshing
 // the site will load the outdated bookmark data into state)
-resourceRouter.patch('/users/:userID', authJWT, userController.toggleBookmark, refreshAccessToken);
+resourceRouter.patch(
+    '/users/:userID',
+    authenticateJWT,
+    userController.toggleBookmark,
+    refreshAccessToken
+);

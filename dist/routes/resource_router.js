@@ -36,23 +36,23 @@ exports.resourceRouter = (0, express_1.Router)();
 */
 exports.resourceRouter.get('/posts', postsController.getAllPosts);
 exports.resourceRouter.get('/posts/:postID', postsController.getSpecificPost);
-exports.resourceRouter.post('/posts', auth_controller_2.authJWT, auth_controller_2.authAuthor, postsController.postNewPost);
-exports.resourceRouter.put('/posts/:postID', auth_controller_2.authJWT, auth_controller_2.authAuthor, postsController.editPost);
+exports.resourceRouter.post('/posts', auth_controller_2.authenticateJWT, auth_controller_2.authenticateAuthor, postsController.postNewPost);
+exports.resourceRouter.put('/posts/:postID', auth_controller_2.authenticateJWT, auth_controller_2.authenticateAuthor, postsController.editPost);
 // For setting an unpublished post to published only
-exports.resourceRouter.patch('/posts/:postID', auth_controller_2.authJWT, auth_controller_2.authAuthor, postsController.toggleFeaturedPublished);
-exports.resourceRouter.delete('/posts/:postID', auth_controller_2.authJWT, auth_controller_2.authAuthor, postsController.deletePost);
+exports.resourceRouter.patch('/posts/:postID', auth_controller_2.authenticateJWT, auth_controller_2.authenticateAuthor, postsController.toggleFeaturedPublished);
+exports.resourceRouter.delete('/posts/:postID', auth_controller_2.authenticateJWT, auth_controller_2.authenticateAuthor, postsController.deletePost);
 /*
     - Handle comments
 */
 exports.resourceRouter.get('/posts/:postID/comments', commentsController.getAllComments);
 exports.resourceRouter.get('/users/:userID/comments', commentsController.getAllComments);
-exports.resourceRouter.post('/posts/:postID/comments', auth_controller_2.authJWT, auth_controller_2.authCommenter, commentsController.postNewComment);
+exports.resourceRouter.post('/posts/:postID/comments', auth_controller_2.authenticateJWT, commentsController.postNewComment);
 exports.resourceRouter.get('/comments/:commentID', commentsController.getSpecificComment);
-exports.resourceRouter.put('/comments/:commentID', auth_controller_2.authJWT, auth_controller_2.authCommenter, commentsController.editComment);
-exports.resourceRouter.delete('/comments/:commentID', auth_controller_2.authJWT, auth_controller_2.authCommenter, commentsController.deleteComment);
+exports.resourceRouter.put('/comments/:commentID', auth_controller_2.authenticateJWT, auth_controller_2.authenticateCommenter, commentsController.editComment);
+exports.resourceRouter.delete('/comments/:commentID', auth_controller_2.authenticateJWT, auth_controller_2.authenticateCommenter, commentsController.deleteComment);
 /*
     - Handle user edit/delete
 */
 // Refresh after patching bookmark to update cookies with updated bookmark data (else refreshing
 // the site will load the outdated bookmark data into state)
-exports.resourceRouter.patch('/users/:userID', auth_controller_2.authJWT, userController.toggleBookmark, auth_controller_1.refreshAccessToken);
+exports.resourceRouter.patch('/users/:userID', auth_controller_2.authenticateJWT, userController.toggleBookmark, auth_controller_1.refreshAccessToken);

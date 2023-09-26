@@ -100,7 +100,7 @@ export const postNewPost: FormPOSTHandler = [
                 timestamp: new Date(),
                 category: req.body.category as Category,
                 text: req.body.text as string,
-                comments: [],
+                commentCount: 0,
                 isPublished: !!req.body.publish as boolean,
                 isFeatured: false,
             });
@@ -160,7 +160,7 @@ export const editPost: FormPOSTHandler = [
                     timestamp: existingPost.timestamp,
                     category: req.body.category as Category,
                     text: req.body.text as string,
-                    comments: existingPost.comments,
+                    commentCount: existingPost.commentCount,
                     isPublished: !!req.body.publish,
                     isFeatured: existingPost.isFeatured,
                 });

@@ -14,7 +14,7 @@ const PostSchema = new mongoose_1.Schema({
         default: 'Other',
     },
     text: { type: String, required: true },
-    comments: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'comment' }],
+    commentCount: { type: Number, default: 0, required: true },
     isPublished: { type: Boolean, default: false, required: true },
     isFeatured: { type: Boolean, default: false, required: true },
 }, { toJSON: { virtuals: true }, versionKey: false });
@@ -24,6 +24,6 @@ PostSchema.virtual('url').get(function () {
 PostSchema.virtual('clientURL').get(function () {
     const titleInURL = this.title.toLowerCase().replaceAll(' ', '-');
     const categoryInURL = this.category.toLowerCase();
-    return `/${categoryInURL}/${titleInURL}`;
+    return `/${categoryInURL}/${titleInURL}_${this._id}`;
 });
 exports.Post = (0, mongoose_1.model)('post', PostSchema);

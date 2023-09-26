@@ -97,7 +97,7 @@ exports.postNewPost = [
                 timestamp: new Date(),
                 category: req.body.category,
                 text: req.body.text,
-                comments: [],
+                commentCount: 0,
                 isPublished: !!req.body.publish,
                 isFeatured: false,
             });
@@ -149,7 +149,7 @@ exports.editPost = [
                     timestamp: existingPost.timestamp,
                     category: req.body.category,
                     text: req.body.text,
-                    comments: existingPost.comments,
+                    commentCount: existingPost.commentCount,
                     isPublished: !!req.body.publish,
                     isFeatured: existingPost.isFeatured,
                 });

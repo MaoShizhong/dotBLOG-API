@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.authCommenter = exports.authAuthor = exports.authJWT = exports.refreshAccessToken = exports.logout = exports.approveLogin = exports.attemptLogin = exports.createNewUser = exports.cmsOrigins = exports.UNAUTHORIZED = void 0;
+exports.authenticateCommenter = exports.authenticateAuthor = exports.authenticateJWT = exports.refreshAccessToken = exports.logout = exports.approveLogin = exports.attemptLogin = exports.createNewUser = exports.cmsOrigins = exports.UNAUTHORIZED = void 0;
 const User_1 = require("../models/User");
 const express_async_handler_1 = __importDefault(require("express-async-handler"));
 const express_validator_1 = require("express-validator");
@@ -156,7 +156,7 @@ exports.logout = logout;
 /*
     - JWTs/auth
 */
-const authJWT = (req, res, next) => {
+const authenticateJWT = (req, res, next) => {
     var _a;
     const accessToken = (_a = req.cookies) === null || _a === void 0 ? void 0 : _a.access;
     if (!accessToken) {
@@ -175,8 +175,8 @@ const authJWT = (req, res, next) => {
         res.status(403).json(exports.UNAUTHORIZED);
     }
 };
-exports.authJWT = authJWT;
-const authAuthor = (req, res, next) => {
+exports.authenticateJWT = authenticateJWT;
+const authenticateAuthor = (req, res, next) => {
     const isAuthor = req === null || req === void 0 ? void 0 : req.isAuthor;
     if (!isAuthor) {
         res.status(401).json(exports.UNAUTHORIZED);
@@ -185,10 +185,10 @@ const authAuthor = (req, res, next) => {
         next();
     }
 };
-exports.authAuthor = authAuthor;
-const authCommenter = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+exports.authenticateAuthor = authenticateAuthor;
+const authenticateCommenter = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const comment = yield Comment_1.Comment.findById(req.params.commentID)
-        .populate('user')
+        .populate('commenter', 'username -_id')
         .exec();
     const usernameToAuthenticate = req.username;
     if (comment && comment.commenter.username === usernameToAuthenticate) {
@@ -198,7 +198,7 @@ const authCommenter = (0, express_async_handler_1.default)((req, res, next) => _
         res.status(401).json(exports.UNAUTHORIZED);
     }
 }));
-exports.authCommenter = authCommenter;
+exports.authenticateCommenter = authenticateCommenter;
 const refreshAccessToken = (req, res) => {
     var _a;
     const refreshToken = (_a = req.cookies) === null || _a === void 0 ? void 0 : _a.refresh;

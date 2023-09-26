@@ -174,7 +174,7 @@ const logout = (req: Request, res: Response): void => {
 /*
     - JWTs/auth
 */
-const authJWT = (req: Request, res: Response, next: NextFunction): void => {
+const authenticateJWT = (req: Request, res: Response, next: NextFunction): void => {
     const accessToken: string | undefined = req.cookies?.access;
 
     if (!accessToken) {
@@ -196,7 +196,7 @@ const authJWT = (req: Request, res: Response, next: NextFunction): void => {
     }
 };
 
-const authAuthor = (req: Request, res: Response, next: NextFunction): void => {
+const authenticateAuthor = (req: Request, res: Response, next: NextFunction): void => {
     const isAuthor = (req as AuthenticatedRequest)?.isAuthor;
 
     if (!isAuthor) {
@@ -206,10 +206,10 @@ const authAuthor = (req: Request, res: Response, next: NextFunction): void => {
     }
 };
 
-const authCommenter = expressAsyncHandler(
+const authenticateCommenter = expressAsyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         const comment = await Comment.findById(req.params.commentID)
-            .populate<{ commenter: UserModel }>('user')
+            .populate<{ commenter: UserModel }>('commenter', 'username -_id')
             .exec();
         const usernameToAuthenticate = (req as AuthenticatedRequest).username;
 
@@ -267,7 +267,7 @@ export {
     approveLogin,
     logout,
     refreshAccessToken,
-    authJWT,
-    authAuthor,
-    authCommenter,
+    authenticateJWT,
+    authenticateAuthor,
+    authenticateCommenter,
 };

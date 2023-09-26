@@ -22,7 +22,12 @@ const PostSchema = new mongoose_1.Schema({
     isFeatured: { type: Boolean, default: false, required: true },
 }, { toJSON: { virtuals: true }, versionKey: false });
 PostSchema.virtual('url').get(function () {
-    return `/posts/${this._id}`;
+    const titleInURL = this.title
+        .toLowerCase()
+        .replaceAll(/[^\w\s]/gi, '')
+        .replaceAll(/\s+/g, '-');
+    const categoryInURL = this.category.toLowerCase();
+    return `https://dotblog.netlify.app/${categoryInURL}/${titleInURL}-${this._id}`;
 });
 PostSchema.virtual('clientURL').get(function () {
     const titleInURL = this.title

@@ -1,13 +1,17 @@
 import { Schema, Types, model } from 'mongoose';
 
 export const categories = ['JavaScript', 'TypeScript', 'HTML', 'CSS', 'Other'] as const;
+export const objectFits = ['object-contain', 'object-cover'] as const;
 
+export type ObjectFit = (typeof objectFits)[number];
 export type Category = (typeof categories)[number];
 
 export type PostModel = {
     _id?: Types.ObjectId;
     author: Types.ObjectId;
     title: string;
+    imageURL?: string;
+    objectFit: ObjectFit;
     timestamp: Date;
     category: Category;
     text: string;
@@ -22,6 +26,8 @@ const PostSchema = new Schema<PostModel>(
     {
         author: { type: Schema.Types.Mixed, ref: 'user', required: true },
         title: { type: String, required: true },
+        imageURL: String,
+        objectFit: { type: String, enum: objectFits, default: 'object-contain' },
         timestamp: { type: Date, required: true },
         category: {
             type: String,
@@ -42,10 +48,13 @@ PostSchema.virtual('url').get(function (): string {
 });
 
 PostSchema.virtual('clientURL').get(function (): string {
-    const titleInURL = this.title.toLowerCase().replaceAll(' ', '-');
+    const titleInURL = this.title
+        .toLowerCase()
+        .replaceAll(/[^\w\s]/gi, '')
+        .replaceAll(/\s+/g, '-');
     const categoryInURL = this.category.toLowerCase();
 
-    return `/${categoryInURL}/${titleInURL}_${this._id}`;
+    return `/${categoryInURL}/${titleInURL}-${this._id}`;
 });
 
 export const Post = model('post', PostSchema);

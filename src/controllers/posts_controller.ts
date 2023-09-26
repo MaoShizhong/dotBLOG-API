@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
-import { categories, Category, Post, PostModel } from '../models/Post';
+import { categories, Category, objectFits, Post, PostModel } from '../models/Post';
 import expressAsyncHandler from 'express-async-handler';
 import { Types } from 'mongoose';
 import { User } from '../models/User';
@@ -62,6 +62,12 @@ export const getSpecificPost = expressAsyncHandler(
 export const postNewPost: FormPOSTHandler = [
     body('title', 'Title must not be empty').trim().notEmpty().escape(),
 
+    body('image', 'Image URL must be a valid URL format').optional({ values: 'falsy' }).isURL(),
+
+    body('objectfit', `Image object-fit must be one of: ${objectFits.join(', ')}`)
+        .optional()
+        .isIn(objectFits),
+
     body('category', 'Category must be one of the listed options').isIn(categories),
 
     body('text', 'Article cannot be empty')
@@ -97,6 +103,8 @@ export const postNewPost: FormPOSTHandler = [
             const post = new Post<PostModel>({
                 author: new Types.ObjectId(author._id),
                 title: req.body.title as string,
+                imageURL: (req.body.image as string) || undefined,
+                objectFit: req.body.objectfit || 'object-contain',
                 timestamp: new Date(),
                 category: req.body.category as Category,
                 text: req.body.text as string,
@@ -120,6 +128,12 @@ export const postNewPost: FormPOSTHandler = [
 */
 export const editPost: FormPOSTHandler = [
     body('title', 'Title must not be empty').trim().notEmpty().escape(),
+
+    body('image', 'Image URL must be a valid URL format').optional({ values: 'falsy' }).isURL(),
+
+    body('objectfit', `Image object-fit must be one of: ${objectFits.join(', ')}`)
+        .optional()
+        .isIn(objectFits),
 
     body('category', 'Category must be one of the listed options').isIn(categories),
 
@@ -153,21 +167,25 @@ export const editPost: FormPOSTHandler = [
                 res.status(404).json(DOES_NOT_EXIST);
             } else {
                 // Only create and store a new post if no errors
-                const postWithEdits = new Post<PostModel>({
-                    _id: existingPost._id,
-                    author: existingPost.author,
-                    title: req.body.title as string,
-                    timestamp: existingPost.timestamp,
-                    category: req.body.category as Category,
-                    text: req.body.text as string,
-                    commentCount: existingPost.commentCount,
-                    isPublished: !!req.body.publish,
-                    isFeatured: existingPost.isFeatured,
-                });
-
-                const editedPost = await Post.findByIdAndUpdate(req.params.postID, postWithEdits, {
-                    new: true,
-                }).populate('author', 'name -_id');
+                const editedPost = await Post.findByIdAndUpdate(
+                    req.params.postID,
+                    new Post<PostModel>({
+                        _id: existingPost._id,
+                        author: existingPost.author,
+                        title: req.body.title as string,
+                        imageURL: req.body.image || existingPost.imageURL,
+                        objectFit: req.body.objectfit || existingPost.objectFit,
+                        timestamp: existingPost.timestamp,
+                        category: req.body.category as Category,
+                        text: req.body.text as string,
+                        commentCount: existingPost.commentCount,
+                        isPublished: !!req.body.publish,
+                        isFeatured: existingPost.isFeatured,
+                    }),
+                    {
+                        new: true,
+                    }
+                ).populate('author', 'name -_id');
 
                 res.json(editedPost);
             }

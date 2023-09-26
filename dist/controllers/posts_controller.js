@@ -64,6 +64,10 @@ exports.getSpecificPost = (0, express_async_handler_1.default)((req, res) => __a
 */
 exports.postNewPost = [
     (0, express_validator_1.body)('title', 'Title must not be empty').trim().notEmpty().escape(),
+    (0, express_validator_1.body)('image', 'Image URL must be a valid URL format').optional({ values: 'falsy' }).isURL(),
+    (0, express_validator_1.body)('objectfit', `Image object-fit must be one of: ${Post_1.objectFits.join(', ')}`)
+        .optional()
+        .isIn(Post_1.objectFits),
     (0, express_validator_1.body)('category', 'Category must be one of the listed options').isIn(Post_1.categories),
     (0, express_validator_1.body)('text', 'Article cannot be empty')
         .trim()
@@ -94,6 +98,8 @@ exports.postNewPost = [
             const post = new Post_1.Post({
                 author: new mongoose_1.Types.ObjectId(author._id),
                 title: req.body.title,
+                imageURL: req.body.image || undefined,
+                objectFit: req.body.objectfit || 'object-contain',
                 timestamp: new Date(),
                 category: req.body.category,
                 text: req.body.text,
@@ -114,6 +120,10 @@ exports.postNewPost = [
 */
 exports.editPost = [
     (0, express_validator_1.body)('title', 'Title must not be empty').trim().notEmpty().escape(),
+    (0, express_validator_1.body)('image', 'Image URL must be a valid URL format').optional({ values: 'falsy' }).isURL(),
+    (0, express_validator_1.body)('objectfit', `Image object-fit must be one of: ${Post_1.objectFits.join(', ')}`)
+        .optional()
+        .isIn(Post_1.objectFits),
     (0, express_validator_1.body)('category', 'Category must be one of the listed options').isIn(Post_1.categories),
     (0, express_validator_1.body)('text', 'Article cannot be empty')
         .trim()
@@ -142,18 +152,19 @@ exports.editPost = [
             }
             else {
                 // Only create and store a new post if no errors
-                const postWithEdits = new Post_1.Post({
+                const editedPost = yield Post_1.Post.findByIdAndUpdate(req.params.postID, new Post_1.Post({
                     _id: existingPost._id,
                     author: existingPost.author,
                     title: req.body.title,
+                    imageURL: req.body.image || existingPost.imageURL,
+                    objectFit: req.body.objectfit || existingPost.objectFit,
                     timestamp: existingPost.timestamp,
                     category: req.body.category,
                     text: req.body.text,
                     commentCount: existingPost.commentCount,
                     isPublished: !!req.body.publish,
                     isFeatured: existingPost.isFeatured,
-                });
-                const editedPost = yield Post_1.Post.findByIdAndUpdate(req.params.postID, postWithEdits, {
+                }), {
                     new: true,
                 }).populate('author', 'name -_id');
                 res.json(editedPost);

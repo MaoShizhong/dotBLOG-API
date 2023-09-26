@@ -29,9 +29,7 @@ exports.getAllComments = (0, express_async_handler_1.default)((req, res) => __aw
         .populate('commenter', 'username -_id')
         .sort({ timestamp: -1 })
         .exec();
-    const status = allComments.length ? 200 : 404;
-    console.log(allComments);
-    res.status(status).json(allComments);
+    res.json(allComments);
 }));
 exports.getSpecificComment = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     if (!mongoose_1.Types.ObjectId.isValid(req.params.commentID)) {
@@ -64,7 +62,6 @@ exports.postNewComment = [
         }
         else {
             // Only create and store a new post if no errors
-            // lastEdited is undefined at creation
             const comment = new Comment_1.Comment({
                 commenter: new mongoose_1.Types.ObjectId(req.query.commenterID),
                 post: new mongoose_1.Types.ObjectId(req.params.postID),
@@ -76,11 +73,9 @@ exports.postNewComment = [
                 comment.save(),
                 Post_1.Post.findOneAndUpdate({ _id: req.params.postID }, { $inc: { commentCount: 1 } }, { new: true }).exec(),
             ]);
+            yield savedComment.populate('commenter', 'username -_id');
             if (savedComment && updatedPost) {
-                res.status(201).json({
-                    newComment: savedComment,
-                    newCommentCount: updatedPost.commentCount,
-                });
+                res.status(201).json(savedComment);
             }
             else {
                 res.status(500).json(DATABASE_UPDATE_ERROR);
@@ -118,7 +113,6 @@ exports.editComment = [
                     commenter: existingComment.commenter,
                     post: existingComment.post,
                     timestamp: existingComment.timestamp,
-                    lastEdited: new Date(),
                     text: req.body.text,
                     replies: existingComment.replies,
                 });

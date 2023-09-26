@@ -6,7 +6,6 @@ const CommentSchema = new mongoose_1.Schema({
     commenter: { type: mongoose_1.Schema.Types.ObjectId, ref: 'user', required: true },
     post: { type: mongoose_1.Schema.Types.ObjectId, ref: 'post', required: true },
     timestamp: { type: Date, required: true },
-    lastEdited: { type: Date, default: undefined },
     text: { type: String, required: true },
     replies: [{ type: mongoose_1.Schema.Types.ObjectId, rel: 'Comment' }],
 }, { versionKey: false });

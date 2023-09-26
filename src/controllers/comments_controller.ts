@@ -28,11 +28,7 @@ export const getAllComments = expressAsyncHandler(
             .sort({ timestamp: -1 })
             .exec();
 
-        const status = allComments.length ? 200 : 404;
-
-        console.log(allComments);
-
-        res.status(status).json(allComments);
+        res.json(allComments);
     }
 );
 
@@ -72,7 +68,6 @@ export const postNewComment: FormPOSTHandler = [
             });
         } else {
             // Only create and store a new post if no errors
-            // lastEdited is undefined at creation
             const comment = new Comment<CommentModel>({
                 commenter: new Types.ObjectId(req.query.commenterID as string),
                 post: new Types.ObjectId(req.params.postID as string),
@@ -90,11 +85,10 @@ export const postNewComment: FormPOSTHandler = [
                 ).exec(),
             ]);
 
+            await savedComment.populate('commenter', 'username -_id');
+
             if (savedComment && updatedPost) {
-                res.status(201).json({
-                    newComment: savedComment,
-                    newCommentCount: updatedPost.commentCount,
-                });
+                res.status(201).json(savedComment);
             } else {
                 res.status(500).json(DATABASE_UPDATE_ERROR);
             }
@@ -133,7 +127,6 @@ export const editComment: FormPOSTHandler = [
                     commenter: existingComment.commenter,
                     post: existingComment.post,
                     timestamp: existingComment.timestamp,
-                    lastEdited: new Date(),
                     text: req.body.text as string,
                     replies: existingComment.replies,
                 });

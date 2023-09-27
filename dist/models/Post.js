@@ -8,6 +8,7 @@ const PostSchema = new mongoose_1.Schema({
     author: { type: mongoose_1.Schema.Types.Mixed, ref: 'user', required: true },
     title: { type: String, required: true },
     imageURL: String,
+    imageCredit: String,
     objectFit: { type: String, enum: exports.objectFits, default: 'object-contain' },
     timestamp: { type: Date, required: true },
     category: {

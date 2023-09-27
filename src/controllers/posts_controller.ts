@@ -85,6 +85,8 @@ const postNewPost: FormPOSTHandler = [
 
     body('image', 'Image URL must be a valid URL format').optional({ values: 'falsy' }).isURL(),
 
+    body('credit').optional().trim(),
+
     body('objectfit', `Image object-fit must be one of: ${objectFits.join(', ')}`)
         .optional()
         .isIn(objectFits),
@@ -125,6 +127,7 @@ const postNewPost: FormPOSTHandler = [
                 author: new Types.ObjectId(author._id),
                 title: req.body.title as string,
                 imageURL: (req.body.image as string) || undefined,
+                imageCredit: (req.body.credit as string) || undefined,
                 objectFit: req.body.objectfit || 'object-contain',
                 timestamp: new Date(),
                 category: req.body.category as Category,
@@ -151,6 +154,8 @@ const editPost: FormPOSTHandler = [
     body('title', 'Title must not be empty').trim().notEmpty().escape(),
 
     body('image', 'Image URL must be a valid URL format').optional({ values: 'falsy' }).isURL(),
+
+    body('credit').optional().trim(),
 
     body('objectfit', `Image object-fit must be one of: ${objectFits.join(', ')}`)
         .optional()
@@ -195,6 +200,7 @@ const editPost: FormPOSTHandler = [
                         author: existingPost.author,
                         title: req.body.title as string,
                         imageURL: req.body.image || existingPost.imageURL,
+                        imageCredit: req.body.credit || existingPost.imageCredit,
                         objectFit: req.body.objectfit || existingPost.objectFit,
                         timestamp: existingPost.timestamp,
                         category: req.body.category as Category,

@@ -91,6 +91,7 @@ exports.getBookmarkedPosts = getBookmarkedPosts;
 const postNewPost = [
     (0, express_validator_1.body)('title', 'Title must not be empty').trim().notEmpty().escape(),
     (0, express_validator_1.body)('image', 'Image URL must be a valid URL format').optional({ values: 'falsy' }).isURL(),
+    (0, express_validator_1.body)('credit').optional().trim(),
     (0, express_validator_1.body)('objectfit', `Image object-fit must be one of: ${Post_1.objectFits.join(', ')}`)
         .optional()
         .isIn(Post_1.objectFits),
@@ -125,6 +126,7 @@ const postNewPost = [
                 author: new mongoose_1.Types.ObjectId(author._id),
                 title: req.body.title,
                 imageURL: req.body.image || undefined,
+                imageCredit: req.body.credit || undefined,
                 objectFit: req.body.objectfit || 'object-contain',
                 timestamp: new Date(),
                 category: req.body.category,
@@ -148,6 +150,7 @@ exports.postNewPost = postNewPost;
 const editPost = [
     (0, express_validator_1.body)('title', 'Title must not be empty').trim().notEmpty().escape(),
     (0, express_validator_1.body)('image', 'Image URL must be a valid URL format').optional({ values: 'falsy' }).isURL(),
+    (0, express_validator_1.body)('credit').optional().trim(),
     (0, express_validator_1.body)('objectfit', `Image object-fit must be one of: ${Post_1.objectFits.join(', ')}`)
         .optional()
         .isIn(Post_1.objectFits),
@@ -184,6 +187,7 @@ const editPost = [
                     author: existingPost.author,
                     title: req.body.title,
                     imageURL: req.body.image || existingPost.imageURL,
+                    imageCredit: req.body.credit || existingPost.imageCredit,
                     objectFit: req.body.objectfit || existingPost.objectFit,
                     timestamp: existingPost.timestamp,
                     category: req.body.category,

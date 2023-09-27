@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteComment = exports.editComment = exports.postNewComment = exports.getSpecificComment = exports.getAllComments = void 0;
+exports.deleteUserComments = exports.deleteComment = exports.editComment = exports.postNewComment = exports.getSpecificComment = exports.getAllComments = void 0;
 const express_async_handler_1 = __importDefault(require("express-async-handler"));
 const express_validator_1 = require("express-validator");
 const mongoose_1 = require("mongoose");
@@ -23,7 +23,7 @@ const DATABASE_UPDATE_ERROR = { message: 'Error updating database' };
 /*
     - GET
 */
-exports.getAllComments = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getAllComments = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const searchFilter = Object.assign(Object.assign({}, (req.params.postID && { post: req.params.postID })), (req.params.readerID && { commenter: req.params.readerID }));
     const allComments = yield Comment_1.Comment.find(searchFilter)
         .populate('commenter', 'username avatar -_id')
@@ -31,7 +31,8 @@ exports.getAllComments = (0, express_async_handler_1.default)((req, res) => __aw
         .exec();
     res.json(allComments);
 }));
-exports.getSpecificComment = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.getAllComments = getAllComments;
+const getSpecificComment = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     if (!mongoose_1.Types.ObjectId.isValid(req.params.commentID)) {
         res.status(400).json(posts_controller_1.INVALID_ID);
         return;
@@ -46,10 +47,11 @@ exports.getSpecificComment = (0, express_async_handler_1.default)((req, res) => 
         res.json(comment);
     }
 }));
+exports.getSpecificComment = getSpecificComment;
 /*
     - POST
 */
-exports.postNewComment = [
+const postNewComment = [
     (0, express_validator_1.body)('text', 'Comment cannot be empty')
         .trim()
         .notEmpty()
@@ -70,6 +72,7 @@ exports.postNewComment = [
                 timestamp: new Date(),
                 text: req.body.text,
                 replies: [],
+                deleted: false,
             });
             const [savedComment, updatedPost] = yield Promise.all([
                 comment.save(),
@@ -85,10 +88,11 @@ exports.postNewComment = [
         }
     })),
 ];
+exports.postNewComment = postNewComment;
 /*
     - PUT
 */
-exports.editComment = [
+const editComment = [
     (0, express_validator_1.body)('text', 'Comment cannot be empty')
         .trim()
         .notEmpty()
@@ -117,6 +121,7 @@ exports.editComment = [
                     timestamp: existingComment.timestamp,
                     text: req.body.text,
                     replies: existingComment.replies,
+                    deleted: false,
                 });
                 const editedComment = yield Comment_1.Comment.findByIdAndUpdate(req.params.commentID, commentWithEdits, { new: true });
                 res.json(editedComment);
@@ -124,22 +129,32 @@ exports.editComment = [
         }
     })),
 ];
+exports.editComment = editComment;
 /*
     - DELETE
 */
-exports.deleteComment = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+// Single comment
+const deleteComment = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     if (!mongoose_1.Types.ObjectId.isValid(req.params.commentID)) {
         res.status(400).json(posts_controller_1.INVALID_ID);
         return;
     }
-    const deletedComment = yield Comment_1.Comment.findByIdAndDelete(req.params.commentID).exec();
+    const deletedComment = yield Comment_1.Comment.findByIdAndUpdate(req.params.commentID, {
+        text: '',
+        deleted: true,
+    }).exec();
     if (!deletedComment) {
         res.status(404).json(posts_controller_1.DOES_NOT_EXIST);
     }
     else {
-        yield Post_1.Post.findByIdAndUpdate(deletedComment.post, {
-            $inc: { commentCount: -1 },
-        }).exec();
         res.status(204).json(deletedComment);
     }
 }));
+exports.deleteComment = deleteComment;
+// All user comments upon account deletion
+const deleteUserComments = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log('deleted all user comments');
+    yield Comment_1.Comment.updateMany({ commenter: req.params.userID }, { text: '', deleted: true }).exec();
+    next();
+}));
+exports.deleteUserComments = deleteUserComments;

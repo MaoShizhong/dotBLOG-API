@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import expressAsyncHandler from 'express-async-handler';
 import { body, validationResult } from 'express-validator';
 import { Types } from 'mongoose';
@@ -16,23 +16,21 @@ const DATABASE_UPDATE_ERROR = { message: 'Error updating database' };
 /*
     - GET
 */
-export const getAllComments = expressAsyncHandler(
-    async (req: Request, res: Response): Promise<void> => {
-        const searchFilter: Query = {
-            ...(req.params.postID && { post: req.params.postID }),
-            ...(req.params.readerID && { commenter: req.params.readerID }),
-        };
+const getAllComments = expressAsyncHandler(async (req: Request, res: Response): Promise<void> => {
+    const searchFilter: Query = {
+        ...(req.params.postID && { post: req.params.postID }),
+        ...(req.params.readerID && { commenter: req.params.readerID }),
+    };
 
-        const allComments = await Comment.find(searchFilter)
-            .populate('commenter', 'username avatar -_id')
-            .sort({ timestamp: -1 })
-            .exec();
+    const allComments = await Comment.find(searchFilter)
+        .populate('commenter', 'username avatar -_id')
+        .sort({ timestamp: -1 })
+        .exec();
 
-        res.json(allComments);
-    }
-);
+    res.json(allComments);
+});
 
-export const getSpecificComment = expressAsyncHandler(
+const getSpecificComment = expressAsyncHandler(
     async (req: Request, res: Response): Promise<void> => {
         if (!Types.ObjectId.isValid(req.params.commentID)) {
             res.status(400).json(INVALID_ID);
@@ -54,7 +52,7 @@ export const getSpecificComment = expressAsyncHandler(
 /*
     - POST
 */
-export const postNewComment: FormPOSTHandler = [
+const postNewComment: FormPOSTHandler = [
     body('text', 'Comment cannot be empty')
         .trim()
         .notEmpty()
@@ -76,6 +74,7 @@ export const postNewComment: FormPOSTHandler = [
                 timestamp: new Date(),
                 text: req.body.text as string,
                 replies: [],
+                deleted: false,
             });
 
             const [savedComment, updatedPost] = await Promise.all([
@@ -101,7 +100,7 @@ export const postNewComment: FormPOSTHandler = [
 /*
     - PUT
 */
-export const editComment: FormPOSTHandler = [
+const editComment: FormPOSTHandler = [
     body('text', 'Comment cannot be empty')
         .trim()
         .notEmpty()
@@ -131,6 +130,7 @@ export const editComment: FormPOSTHandler = [
                     timestamp: existingComment.timestamp,
                     text: req.body.text as string,
                     replies: existingComment.replies,
+                    deleted: false,
                 });
 
                 const editedComment = await Comment.findByIdAndUpdate(
@@ -148,23 +148,44 @@ export const editComment: FormPOSTHandler = [
 /*
     - DELETE
 */
-export const deleteComment = expressAsyncHandler(
-    async (req: Request, res: Response): Promise<void> => {
-        if (!Types.ObjectId.isValid(req.params.commentID)) {
-            res.status(400).json(INVALID_ID);
-            return;
-        }
+// Single comment
+const deleteComment = expressAsyncHandler(async (req: Request, res: Response): Promise<void> => {
+    if (!Types.ObjectId.isValid(req.params.commentID)) {
+        res.status(400).json(INVALID_ID);
+        return;
+    }
 
-        const deletedComment = await Comment.findByIdAndDelete(req.params.commentID).exec();
+    const deletedComment = await Comment.findByIdAndUpdate(req.params.commentID, {
+        text: '',
+        deleted: true,
+    }).exec();
 
-        if (!deletedComment) {
-            res.status(404).json(DOES_NOT_EXIST);
-        } else {
-            await Post.findByIdAndUpdate(deletedComment.post, {
-                $inc: { commentCount: -1 },
-            }).exec();
+    if (!deletedComment) {
+        res.status(404).json(DOES_NOT_EXIST);
+    } else {
+        res.status(204).json(deletedComment);
+    }
+});
 
-            res.status(204).json(deletedComment);
-        }
+// All user comments upon account deletion
+const deleteUserComments = expressAsyncHandler(
+    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+        console.log('deleted all user comments');
+
+        await Comment.updateMany(
+            { commenter: req.params.userID },
+            { text: '', deleted: true }
+        ).exec();
+
+        next();
     }
 );
+
+export {
+    getAllComments,
+    getSpecificComment,
+    postNewComment,
+    editComment,
+    deleteComment,
+    deleteUserComments,
+};

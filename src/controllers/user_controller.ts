@@ -58,21 +58,33 @@ const changeUsername = expressAsyncHandler(
 
 const changeAvatarColour = expressAsyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        if (!req.query.avatar) next();
-
-        const colour = `#${req.query.avatar}`;
-
-        if (!colours.includes(colour as Colour)) {
-            console.log(colour);
+        if (!req.query.avatar) {
+            next();
+        } else if (!/^[0-9A-F]{6}$/.test(req.query.avatar as string)) {
             res.status(400).json(INVALID_QUERY);
             return;
         }
 
+        const colour = `#${req.query.avatar}`;
+
         await User.findByIdAndUpdate(req.params.userID, { avatar: colour }).exec();
 
-        (req as AuthenticatedRequest).avatar = colour as Colour;
+        (req as AuthenticatedRequest).avatar = colour;
         next();
     }
 );
 
-export { toggleBookmark, changeUsername, changeAvatarColour };
+const deleteUser = expressAsyncHandler(
+    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+        console.log('delete');
+        const deletedUser = User.findByIdAndDelete(req.params.userID).exec();
+
+        if (!deletedUser) {
+            res.status(404).json(DOES_NOT_EXIST);
+        } else {
+            next();
+        }
+    }
+);
+
+export { toggleBookmark, changeUsername, changeAvatarColour, deleteUser };

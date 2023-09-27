@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.changeAvatarColour = exports.changeUsername = exports.toggleBookmark = void 0;
+exports.deleteUser = exports.changeAvatarColour = exports.changeUsername = exports.toggleBookmark = void 0;
 const express_async_handler_1 = __importDefault(require("express-async-handler"));
 const User_1 = require("../models/User");
 const posts_controller_1 = require("./posts_controller");
@@ -66,16 +66,27 @@ const changeUsername = (0, express_async_handler_1.default)((req, res, next) => 
 }));
 exports.changeUsername = changeUsername;
 const changeAvatarColour = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    if (!req.query.avatar)
+    if (!req.query.avatar) {
         next();
-    const colour = `#${req.query.avatar}`;
-    if (!User_1.colours.includes(colour)) {
-        console.log(colour);
+    }
+    else if (!/^[0-9A-F]{6}$/.test(req.query.avatar)) {
         res.status(400).json(posts_controller_1.INVALID_QUERY);
         return;
     }
+    const colour = `#${req.query.avatar}`;
     yield User_1.User.findByIdAndUpdate(req.params.userID, { avatar: colour }).exec();
     req.avatar = colour;
     next();
 }));
 exports.changeAvatarColour = changeAvatarColour;
+const deleteUser = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log('delete');
+    const deletedUser = User_1.User.findByIdAndDelete(req.params.userID).exec();
+    if (!deletedUser) {
+        res.status(404).json(posts_controller_1.DOES_NOT_EXIST);
+    }
+    else {
+        next();
+    }
+}));
+exports.deleteUser = deleteUser;

@@ -11,6 +11,7 @@ export type PostModel = {
     author: Types.ObjectId;
     title: string;
     imageURL?: string;
+    imageCredit?: string;
     objectFit: ObjectFit;
     timestamp: Date;
     category: Category;
@@ -27,6 +28,7 @@ const PostSchema = new Schema<PostModel>(
         author: { type: Schema.Types.Mixed, ref: 'user', required: true },
         title: { type: String, required: true },
         imageURL: String,
+        imageCredit: String,
         objectFit: { type: String, enum: objectFits, default: 'object-contain' },
         timestamp: { type: Date, required: true },
         category: {

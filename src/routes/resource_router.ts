@@ -7,6 +7,7 @@ import {
     authenticateJWT,
     authenticateAuthor,
     authenticateCommenter,
+    logout,
 } from '../controllers/auth_controller';
 
 export const resourceRouter = Router();
@@ -83,4 +84,13 @@ resourceRouter.put(
     userController.changeUsername,
     userController.changeAvatarColour,
     refreshAccessToken
+);
+
+resourceRouter.delete(
+    '/users/:userID',
+    authenticateJWT,
+    authenticateSameUser,
+    userController.deleteUser,
+    commentsController.deleteUserComments,
+    logout
 );

@@ -58,3 +58,4 @@ exports.resourceRouter.delete('/comments/:commentID', auth_controller_2.authenti
 // the site will load the outdated bookmark data into state)
 exports.resourceRouter.patch('/users/:userID', auth_controller_2.authenticateJWT, userController.toggleBookmark, auth_controller_1.refreshAccessToken);
 exports.resourceRouter.put('/users/:userID', auth_controller_2.authenticateJWT, auth_controller_1.authenticateSameUser, userController.changeUsername, userController.changeAvatarColour, auth_controller_1.refreshAccessToken);
+exports.resourceRouter.delete('/users/:userID', auth_controller_2.authenticateJWT, auth_controller_1.authenticateSameUser, userController.deleteUser, commentsController.deleteUserComments, auth_controller_2.logout);

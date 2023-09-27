@@ -58,6 +58,9 @@ const createNewUser: FormPOSTHandler = [
         minNumbers: 1,
         minSymbols: 0,
     }),
+    body('confirm', 'Passwords must match').custom(
+        (confirm, { req }): boolean => confirm === req.body.password
+    ),
     body('authorPassword', 'Incorrect author password - cannot create account')
         .optional({ values: 'undefined' })
         .matches(ADMIN_PASSWORD),

@@ -53,6 +53,7 @@ const createNewUser = [
         minNumbers: 1,
         minSymbols: 0,
     }),
+    (0, express_validator_1.body)('confirm', 'Passwords must match').custom((confirm, { req }) => confirm === req.body.password),
     (0, express_validator_1.body)('authorPassword', 'Incorrect author password - cannot create account')
         .optional({ values: 'undefined' })
         .matches(ADMIN_PASSWORD),

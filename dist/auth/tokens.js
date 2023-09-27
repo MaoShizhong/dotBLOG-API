@@ -14,6 +14,7 @@ function generateTokens(...tokens) {
             _id: token.user._id,
             username: token.user.username,
             avatar: token.user.avatar,
+            fontColour: token.user.fontColour,
             bookmarks: token.user.bookmarks,
             isAuthor: token.user.isAuthor,
         }, token.secret, { expiresIn: token.expiry }));

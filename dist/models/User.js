@@ -10,6 +10,12 @@ const UserSchema = new mongoose_1.Schema({
         required: true,
         default: '#696869',
     },
+    fontColour: {
+        type: String,
+        required: true,
+        enum: ['#FAFAFA', '#2A2A27'],
+        default: '#FAFAFA',
+    },
     password: { type: String, required: true },
     bookmarks: [{ type: mongoose_1.Schema.Types.ObjectId, ref: 'post' }],
     isAuthor: { type: Boolean, default: false, required: true },

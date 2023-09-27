@@ -1,10 +1,13 @@
 import { Schema, Types, model } from 'mongoose';
 
+export type FontColour = '#FAFAFA' | '#2A2A27';
+
 export type UserModel = {
     _id: Types.ObjectId;
     name?: string;
     username: string;
     avatar: string;
+    fontColour: FontColour;
     password: string;
     bookmarks: Types.ObjectId[];
     isAuthor: boolean;
@@ -19,6 +22,12 @@ const UserSchema = new Schema<UserModel>(
             type: String,
             required: true,
             default: '#696869',
+        },
+        fontColour: {
+            type: String,
+            required: true,
+            enum: ['#FAFAFA', '#2A2A27'],
+            default: '#FAFAFA',
         },
         password: { type: String, required: true },
         bookmarks: [{ type: Schema.Types.ObjectId, ref: 'post' }],

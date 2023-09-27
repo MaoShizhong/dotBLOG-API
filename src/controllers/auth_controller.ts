@@ -1,4 +1,4 @@
-import { Colour, User, UserModel } from '../models/User';
+import { FontColour, User, UserModel } from '../models/User';
 import { CookieOptions, NextFunction, Request, Response } from 'express';
 import expressAsyncHandler from 'express-async-handler';
 import { body, validationResult } from 'express-validator';
@@ -13,7 +13,8 @@ export interface AuthenticatedRequest extends Request {
     _id: Types.ObjectId;
     user: UserModel;
     username: string;
-    avatar: Colour;
+    avatar: string;
+    fontColour: FontColour;
     bookmarks: Types.ObjectId[];
     isAuthor: boolean;
 }
@@ -79,6 +80,7 @@ const createNewUser: FormPOSTHandler = [
                     name: (req.body.name as string) || undefined,
                     username: req.body.username as string,
                     avatar: '#696869',
+                    fontColour: '#FAFAFA',
                     password: hashedPassword as string,
                     bookmarks: [] as Types.ObjectId[],
                     isAuthor: !!req.body.authorPassword,
@@ -265,6 +267,9 @@ const refreshAccessToken = (req: Request, res: Response): void => {
         if (request.avatar) {
             decodedUser.avatar = request.avatar;
         }
+        if (request.fontColour) {
+            decodedUser.fontColour = request.fontColour;
+        }
 
         const [newAccessToken, newRefreshToken] = generateTokens(
             {
@@ -285,6 +290,7 @@ const refreshAccessToken = (req: Request, res: Response): void => {
                 id: decodedUser._id,
                 username: decodedUser.username,
                 avatar: decodedUser.avatar,
+                fontColour: decodedUser.fontColour,
                 bookmarkedPosts: decodedUser.bookmarks,
             });
     } catch (error) {

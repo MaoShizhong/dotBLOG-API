@@ -69,6 +69,7 @@ const createNewUser = [
                     name: req.body.name || undefined,
                     username: req.body.username,
                     avatar: '#696869',
+                    fontColour: '#FAFAFA',
                     password: hashedPassword,
                     bookmarks: [],
                     isAuthor: !!req.body.authorPassword,
@@ -236,6 +237,9 @@ const refreshAccessToken = (req, res) => {
         if (request.avatar) {
             decodedUser.avatar = request.avatar;
         }
+        if (request.fontColour) {
+            decodedUser.fontColour = request.fontColour;
+        }
         const [newAccessToken, newRefreshToken] = (0, tokens_1.generateTokens)({
             user: decodedUser,
             secret: ACCESS_TOKEN_SECRET,
@@ -251,6 +255,7 @@ const refreshAccessToken = (req, res) => {
             id: decodedUser._id,
             username: decodedUser.username,
             avatar: decodedUser.avatar,
+            fontColour: decodedUser.fontColour,
             bookmarkedPosts: decodedUser.bookmarks,
         });
     }

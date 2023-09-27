@@ -74,8 +74,13 @@ const changeAvatarColour = (0, express_async_handler_1.default)((req, res, next)
         return;
     }
     const colour = `#${req.query.avatar}`;
-    yield User_1.User.findByIdAndUpdate(req.params.userID, { avatar: colour }).exec();
+    const fontColour = shouldMakeDark(colour) ? '#2A2A27' : '#FAFAFA';
+    yield User_1.User.findByIdAndUpdate(req.params.userID, {
+        avatar: colour,
+        fontColour: fontColour,
+    }).exec();
     req.avatar = colour;
+    req.fontColour = fontColour;
     next();
 }));
 exports.changeAvatarColour = changeAvatarColour;
@@ -90,3 +95,9 @@ const deleteUser = (0, express_async_handler_1.default)((req, res, next) => __aw
     }
 }));
 exports.deleteUser = deleteUser;
+function shouldMakeDark(colour) {
+    const red = parseInt(colour.slice(0, 2), 16);
+    const green = parseInt(colour.slice(2, 4), 16);
+    const blue = parseInt(colour.slice(4), 16);
+    return red * 0.299 + green * 0.587 + blue * 0.114 > 155;
+}

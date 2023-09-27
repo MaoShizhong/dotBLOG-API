@@ -23,7 +23,7 @@ const getAllComments = expressAsyncHandler(async (req: Request, res: Response): 
     };
 
     const allComments = await Comment.find(searchFilter)
-        .populate('commenter', 'username avatar -_id')
+        .populate('commenter', 'username avatar fontColour -_id')
         .sort({ timestamp: -1 })
         .exec();
 
@@ -38,7 +38,7 @@ const getSpecificComment = expressAsyncHandler(
         }
 
         const comment = await Comment.findById(req.params.commentID)
-            .populate('commenter', 'username avatar -_id')
+            .populate('commenter', 'username avatar fontColour -_id')
             .exec();
 
         if (!comment) {
@@ -86,7 +86,7 @@ const postNewComment: FormPOSTHandler = [
                 ).exec(),
             ]);
 
-            await savedComment.populate('commenter', 'username avatar -_id');
+            await savedComment.populate('commenter', 'username avatar fontColour -_id');
 
             if (savedComment && updatedPost) {
                 res.status(201).json(savedComment);

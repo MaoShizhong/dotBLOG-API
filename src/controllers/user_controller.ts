@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import expressAsyncHandler from 'express-async-handler';
-import { Colour, User, colours } from '../models/User';
+import { FontColour, User } from '../models/User';
 import { DOES_NOT_EXIST, INVALID_ID, INVALID_QUERY } from './posts_controller';
 import { Types } from 'mongoose';
 import { AuthenticatedRequest } from './auth_controller';
@@ -66,10 +66,15 @@ const changeAvatarColour = expressAsyncHandler(
         }
 
         const colour = `#${req.query.avatar}`;
+        const fontColour: FontColour = shouldMakeDark(colour) ? '#2A2A27' : '#FAFAFA';
 
-        await User.findByIdAndUpdate(req.params.userID, { avatar: colour }).exec();
+        await User.findByIdAndUpdate(req.params.userID, {
+            avatar: colour,
+            fontColour: fontColour,
+        }).exec();
 
         (req as AuthenticatedRequest).avatar = colour;
+        (req as AuthenticatedRequest).fontColour = fontColour;
         next();
     }
 );
@@ -86,5 +91,13 @@ const deleteUser = expressAsyncHandler(
         }
     }
 );
+
+function shouldMakeDark(colour: string): boolean {
+    const red = parseInt(colour.slice(0, 2), 16);
+    const green = parseInt(colour.slice(2, 4), 16);
+    const blue = parseInt(colour.slice(4), 16);
+
+    return red * 0.299 + green * 0.587 + blue * 0.114 > 155;
+}
 
 export { toggleBookmark, changeUsername, changeAvatarColour, deleteUser };

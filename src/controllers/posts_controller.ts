@@ -6,32 +6,56 @@ import { Types } from 'mongoose';
 import { User } from '../models/User';
 import { AuthenticatedRequest, cmsOrigins, UNAUTHORIZED } from './auth_controller';
 
-export const INVALID_ID = { message: 'Failed to fetch - invalid ID format' } as const;
-export const INVALID_QUERY = { message: 'Failed to fetch - invalid query' } as const;
-export const DOES_NOT_EXIST = { message: 'Failed to fetch - no resource with that ID' } as const;
+const INVALID_ID = { message: 'Failed to fetch - invalid ID format' } as const;
+const INVALID_QUERY = { message: 'Failed to fetch - invalid query' } as const;
+const DOES_NOT_EXIST = { message: 'Failed to fetch - no resource with that ID' } as const;
 
 /*
     - GET
 */
-export const getAllPosts = expressAsyncHandler(
-    async (req: Request, res: Response): Promise<void> => {
-        // Show unpublished posts only if viewing from CMS site
-        const filter = cmsOrigins.includes(req.headers.origin!) ? {} : { isPublished: true };
+const getAllPosts = expressAsyncHandler(async (req: Request, res: Response): Promise<void> => {
+    // Show unpublished posts only if viewing from CMS site
+    const filter = cmsOrigins.includes(req.headers.origin!) ? {} : { isPublished: true };
 
-        // Show newest posts first
-        const posts = await Post.find(filter)
-            .populate('author', '-_id name username')
-            .sort({ timestamp: -1 })
-            .exec();
+    // Show newest posts first
+    const posts = await Post.find(filter)
+        .populate('author', '-_id name username')
+        .sort({ timestamp: -1 })
+        .exec();
 
-        res.json(posts);
-    }
-);
+    res.json(posts);
+});
 
 // GET INDIVIDUAL POST
-export const getSpecificPost = expressAsyncHandler(
+const getSpecificPost = expressAsyncHandler(async (req: Request, res: Response): Promise<void> => {
+    if (!Types.ObjectId.isValid(req.params.postID)) {
+        res.status(400).json(INVALID_ID);
+        return;
+    }
+
+    if (!req.headers.origin) {
+        res.status(401).json(UNAUTHORIZED);
+        return;
+    }
+
+    const post = await Post.findById(req.params.postID).populate('author', 'name -_id').exec();
+
+    if (post) {
+        // Prevent showing unpublished posts on main client
+        if (!post.isPublished && !cmsOrigins.includes(req.headers.origin)) {
+            res.status(403).json(UNAUTHORIZED);
+        } else {
+            res.json(post);
+        }
+    } else {
+        res.status(404).json(DOES_NOT_EXIST);
+    }
+});
+
+// GET BOOKMARKS
+const getBookmarkedPosts = expressAsyncHandler(
     async (req: Request, res: Response): Promise<void> => {
-        if (!Types.ObjectId.isValid(req.params.postID)) {
+        if (!Types.ObjectId.isValid(req.params.userID)) {
             res.status(400).json(INVALID_ID);
             return;
         }
@@ -41,17 +65,14 @@ export const getSpecificPost = expressAsyncHandler(
             return;
         }
 
-        const post = await Post.findById(req.params.postID).populate('author', 'name -_id').exec();
+        const user = await User.findById(req.params.userID)
+            .populate('bookmarks', '-text, -objectFit -isFeatured')
+            .exec();
 
-        if (post) {
-            // Prevent showing unpublished posts on main client
-            if (!post.isPublished && !cmsOrigins.includes(req.headers.origin)) {
-                res.status(403).json(UNAUTHORIZED);
-            } else {
-                res.json(post);
-            }
-        } else {
+        if (!user) {
             res.status(404).json(DOES_NOT_EXIST);
+        } else {
+            res.json({ bookmarks: user.bookmarks });
         }
     }
 );
@@ -59,7 +80,7 @@ export const getSpecificPost = expressAsyncHandler(
 /*
     - POST
 */
-export const postNewPost: FormPOSTHandler = [
+const postNewPost: FormPOSTHandler = [
     body('title', 'Title must not be empty').trim().notEmpty().escape(),
 
     body('image', 'Image URL must be a valid URL format').optional({ values: 'falsy' }).isURL(),
@@ -126,7 +147,7 @@ export const postNewPost: FormPOSTHandler = [
 /*
     - PUT
 */
-export const editPost: FormPOSTHandler = [
+const editPost: FormPOSTHandler = [
     body('title', 'Title must not be empty').trim().notEmpty().escape(),
 
     body('image', 'Image URL must be a valid URL format').optional({ values: 'falsy' }).isURL(),
@@ -196,7 +217,7 @@ export const editPost: FormPOSTHandler = [
 /*
     - PATCH
 */
-export const toggleFeaturedPublished = expressAsyncHandler(
+const toggleFeaturedPublished = expressAsyncHandler(
     async (req: Request, res: Response): Promise<void> => {
         if (!Types.ObjectId.isValid(req.params.postID)) {
             res.status(400).json(INVALID_ID);
@@ -255,23 +276,35 @@ const toggleFeature = async (req: Request): Promise<Array<PostModel | PostModel[
 /*
     - DELETE
 */
-export const deletePost = expressAsyncHandler(
-    async (req: Request, res: Response): Promise<void> => {
-        if (!Types.ObjectId.isValid(req.params.postID)) {
-            res.status(400).json(INVALID_ID);
-            return;
-        }
-
-        const deletedPost = await Post.findByIdAndDelete(req.params.postID).exec();
-
-        if (!deletedPost) {
-            res.status(404).json(DOES_NOT_EXIST);
-        } else {
-            res.status(204).json(deletedPost);
-        }
+const deletePost = expressAsyncHandler(async (req: Request, res: Response): Promise<void> => {
+    if (!Types.ObjectId.isValid(req.params.postID)) {
+        res.status(400).json(INVALID_ID);
+        return;
     }
-);
 
-export function removeDangerousScriptTags(text: string): string {
+    const deletedPost = await Post.findByIdAndDelete(req.params.postID).exec();
+
+    if (!deletedPost) {
+        res.status(404).json(DOES_NOT_EXIST);
+    } else {
+        res.status(204).json(deletedPost);
+    }
+});
+
+function removeDangerousScriptTags(text: string): string {
     return text.replaceAll(/(<script>)|(<\/script>)|(?<=<script>)(.|\[^.])*(?=<\/script>)/g, '\n');
 }
+
+export {
+    INVALID_ID,
+    INVALID_QUERY,
+    DOES_NOT_EXIST,
+    getAllPosts,
+    getSpecificPost,
+    getBookmarkedPosts,
+    postNewPost,
+    editPost,
+    toggleFeaturedPublished,
+    deletePost,
+    removeDangerousScriptTags,
+};

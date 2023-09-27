@@ -19,6 +19,7 @@ export function generateTokens(...tokens: TokenInfo[]): string[] {
                 {
                     _id: token.user._id,
                     username: token.user.username,
+                    avatar: token.user.avatar,
                     bookmarks: token.user.bookmarks,
                     isAuthor: token.user.isAuthor,
                 },

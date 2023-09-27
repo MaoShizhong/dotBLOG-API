@@ -4,7 +4,7 @@ import * as authController from '../controllers/auth_controller';
 export const authRouter = Router();
 
 /*
-    - Handle user creation
+    - Handle user accounts
 */
 authRouter.post(
     '/signup',

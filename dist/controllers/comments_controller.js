@@ -26,7 +26,7 @@ const DATABASE_UPDATE_ERROR = { message: 'Error updating database' };
 exports.getAllComments = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const searchFilter = Object.assign(Object.assign({}, (req.params.postID && { post: req.params.postID })), (req.params.readerID && { commenter: req.params.readerID }));
     const allComments = yield Comment_1.Comment.find(searchFilter)
-        .populate('commenter', 'username -_id')
+        .populate('commenter', 'username avatar -_id')
         .sort({ timestamp: -1 })
         .exec();
     res.json(allComments);
@@ -36,7 +36,9 @@ exports.getSpecificComment = (0, express_async_handler_1.default)((req, res) => 
         res.status(400).json(posts_controller_1.INVALID_ID);
         return;
     }
-    const comment = yield Comment_1.Comment.findById(req.params.commentID).exec();
+    const comment = yield Comment_1.Comment.findById(req.params.commentID)
+        .populate('commenter', 'username avatar -_id')
+        .exec();
     if (!comment) {
         res.status(404).json(posts_controller_1.DOES_NOT_EXIST);
     }
@@ -73,7 +75,7 @@ exports.postNewComment = [
                 comment.save(),
                 Post_1.Post.findOneAndUpdate({ _id: req.params.postID }, { $inc: { commentCount: 1 } }, { new: true }).exec(),
             ]);
-            yield savedComment.populate('commenter', 'username -_id');
+            yield savedComment.populate('commenter', 'username avatar -_id');
             if (savedComment && updatedPost) {
                 res.status(201).json(savedComment);
             }

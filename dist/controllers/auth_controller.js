@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.authenticateCommenter = exports.authenticateAuthor = exports.authenticateJWT = exports.refreshAccessToken = exports.logout = exports.approveLogin = exports.attemptLogin = exports.createNewUser = exports.cmsOrigins = exports.UNAUTHORIZED = void 0;
+exports.authenticateCommenter = exports.authenticateSameUser = exports.authenticateAuthor = exports.authenticateJWT = exports.refreshAccessToken = exports.logout = exports.approveLogin = exports.attemptLogin = exports.createNewUser = exports.cmsOrigins = exports.UNAUTHORIZED = void 0;
 const User_1 = require("../models/User");
 const express_async_handler_1 = __importDefault(require("express-async-handler"));
 const express_validator_1 = require("express-validator");
@@ -67,6 +67,7 @@ const createNewUser = [
                 const user = new User_1.User({
                     name: req.body.name || undefined,
                     username: req.body.username,
+                    avatar: '#696869',
                     password: hashedPassword,
                     bookmarks: [],
                     isAuthor: !!req.body.authorPassword,
@@ -137,7 +138,12 @@ const approveLogin = (req, res) => {
     });
     res.cookie('access', accessToken, Object.assign(Object.assign({}, cookieOptions), { maxAge: expiry.accessMS }))
         .cookie('refresh', refreshToken, Object.assign(Object.assign({}, cookieOptions), { maxAge: expiry.refreshMS }))
-        .json({ id: user._id, username: user.username, bookmarkedPosts: user.bookmarks });
+        .json({
+        id: user._id,
+        username: user.username,
+        avatar: user.avatar,
+        bookmarkedPosts: user.bookmarks,
+    });
 };
 exports.approveLogin = approveLogin;
 const logout = (req, res) => {
@@ -166,6 +172,7 @@ const authenticateJWT = (req, res, next) => {
     try {
         const decodedUser = jsonwebtoken_1.default.verify(accessToken, ACCESS_TOKEN_SECRET);
         const request = req;
+        request._id = decodedUser._id;
         request.username = decodedUser.username;
         request.isAuthor = decodedUser.isAuthor;
         next();
@@ -186,6 +193,16 @@ const authenticateAuthor = (req, res, next) => {
     }
 };
 exports.authenticateAuthor = authenticateAuthor;
+const authenticateSameUser = (req, res, next) => {
+    const _id = req._id;
+    if (_id.valueOf() === req.params.userID) {
+        next();
+    }
+    else {
+        res.status(401).json(exports.UNAUTHORIZED);
+    }
+};
+exports.authenticateSameUser = authenticateSameUser;
 const authenticateCommenter = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const comment = yield Comment_1.Comment.findById(req.params.commentID)
         .populate('commenter', 'username -_id')
@@ -208,8 +225,15 @@ const refreshAccessToken = (req, res) => {
     }
     try {
         const decodedUser = jsonwebtoken_1.default.verify(refreshToken, REFRESH_TOKEN_SECRET);
-        if (req.bookmarks) {
-            decodedUser.bookmarks = req.bookmarks;
+        const request = req;
+        if (request.bookmarks) {
+            decodedUser.bookmarks = request.bookmarks;
+        }
+        if (request.username) {
+            decodedUser.username = request.username;
+        }
+        if (request.avatar) {
+            decodedUser.avatar = request.avatar;
         }
         const [newAccessToken, newRefreshToken] = (0, tokens_1.generateTokens)({
             user: decodedUser,
@@ -225,6 +249,7 @@ const refreshAccessToken = (req, res) => {
             .json({
             id: decodedUser._id,
             username: decodedUser.username,
+            avatar: decodedUser.avatar,
             bookmarkedPosts: decodedUser.bookmarks,
         });
     }

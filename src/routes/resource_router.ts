@@ -2,7 +2,7 @@ import { Router } from 'express';
 import * as postsController from '../controllers/posts_controller';
 import * as commentsController from '../controllers/comments_controller';
 import * as userController from '../controllers/user_controller';
-import { refreshAccessToken } from '../controllers/auth_controller';
+import { authenticateSameUser, refreshAccessToken } from '../controllers/auth_controller';
 import {
     authenticateJWT,
     authenticateAuthor,
@@ -17,6 +17,8 @@ export const resourceRouter = Router();
 resourceRouter.get('/posts', postsController.getAllPosts);
 
 resourceRouter.get('/posts/:postID', postsController.getSpecificPost);
+
+resourceRouter.get('/users/:userID/bookmarks', authenticateJWT, postsController.getBookmarkedPosts);
 
 resourceRouter.post('/posts', authenticateJWT, authenticateAuthor, postsController.postNewPost);
 
@@ -71,5 +73,14 @@ resourceRouter.patch(
     '/users/:userID',
     authenticateJWT,
     userController.toggleBookmark,
+    refreshAccessToken
+);
+
+resourceRouter.put(
+    '/users/:userID',
+    authenticateJWT,
+    authenticateSameUser,
+    userController.changeUsername,
+    userController.changeAvatarColour,
     refreshAccessToken
 );

@@ -28,7 +28,7 @@ const express_1 = require("express");
 const authController = __importStar(require("../controllers/auth_controller"));
 exports.authRouter = (0, express_1.Router)();
 /*
-    - Handle user creation
+    - Handle user accounts
 */
 exports.authRouter.post('/signup', authController.createNewUser, authController.attemptLogin, authController.approveLogin);
 /*

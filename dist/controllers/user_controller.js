@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.toggleBookmark = void 0;
+exports.changeAvatarColour = exports.changeUsername = exports.toggleBookmark = void 0;
 const express_async_handler_1 = __importDefault(require("express-async-handler"));
 const User_1 = require("../models/User");
 const posts_controller_1 = require("./posts_controller");
@@ -45,3 +45,37 @@ const toggleBookmark = (0, express_async_handler_1.default)((req, res, next) => 
     next();
 }));
 exports.toggleBookmark = toggleBookmark;
+const changeUsername = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!req.query.username)
+        next();
+    const [currentUser, existingUsername] = yield Promise.all([
+        User_1.User.findById(req.params.userID).exec(),
+        User_1.User.findOne({ username: req.query.username }).exec(),
+    ]);
+    if ((currentUser === null || currentUser === void 0 ? void 0 : currentUser.username) === req.query.username) {
+        next();
+    }
+    else if (existingUsername) {
+        res.status(403).json({ message: 'Username already taken' });
+    }
+    else {
+        yield User_1.User.findByIdAndUpdate(req.params.userID, { username: req.query.username });
+        req.username = req.query.username;
+        next();
+    }
+}));
+exports.changeUsername = changeUsername;
+const changeAvatarColour = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!req.query.avatar)
+        next();
+    const colour = `#${req.query.avatar}`;
+    if (!User_1.colours.includes(colour)) {
+        console.log(colour);
+        res.status(400).json(posts_controller_1.INVALID_QUERY);
+        return;
+    }
+    yield User_1.User.findByIdAndUpdate(req.params.userID, { avatar: colour }).exec();
+    req.avatar = colour;
+    next();
+}));
+exports.changeAvatarColour = changeAvatarColour;

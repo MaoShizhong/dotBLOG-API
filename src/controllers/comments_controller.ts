@@ -24,7 +24,7 @@ export const getAllComments = expressAsyncHandler(
         };
 
         const allComments = await Comment.find(searchFilter)
-            .populate('commenter', 'username -_id')
+            .populate('commenter', 'username avatar -_id')
             .sort({ timestamp: -1 })
             .exec();
 
@@ -39,7 +39,9 @@ export const getSpecificComment = expressAsyncHandler(
             return;
         }
 
-        const comment = await Comment.findById(req.params.commentID).exec();
+        const comment = await Comment.findById(req.params.commentID)
+            .populate('commenter', 'username avatar -_id')
+            .exec();
 
         if (!comment) {
             res.status(404).json(DOES_NOT_EXIST);
@@ -85,7 +87,7 @@ export const postNewComment: FormPOSTHandler = [
                 ).exec(),
             ]);
 
-            await savedComment.populate('commenter', 'username -_id');
+            await savedComment.populate('commenter', 'username avatar -_id');
 
             if (savedComment && updatedPost) {
                 res.status(201).json(savedComment);

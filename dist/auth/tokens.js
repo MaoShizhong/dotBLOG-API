@@ -13,6 +13,7 @@ function generateTokens(...tokens) {
         signedJWTs.push(jsonwebtoken_1.default.sign({
             _id: token.user._id,
             username: token.user.username,
+            avatar: token.user.avatar,
             bookmarks: token.user.bookmarks,
             isAuthor: token.user.isAuthor,
         }, token.secret, { expiresIn: token.expiry }));

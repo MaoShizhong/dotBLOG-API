@@ -36,6 +36,7 @@ exports.resourceRouter = (0, express_1.Router)();
 */
 exports.resourceRouter.get('/posts', postsController.getAllPosts);
 exports.resourceRouter.get('/posts/:postID', postsController.getSpecificPost);
+exports.resourceRouter.get('/users/:userID/bookmarks', auth_controller_2.authenticateJWT, postsController.getBookmarkedPosts);
 exports.resourceRouter.post('/posts', auth_controller_2.authenticateJWT, auth_controller_2.authenticateAuthor, postsController.postNewPost);
 exports.resourceRouter.put('/posts/:postID', auth_controller_2.authenticateJWT, auth_controller_2.authenticateAuthor, postsController.editPost);
 // For setting an unpublished post to published only
@@ -56,3 +57,4 @@ exports.resourceRouter.delete('/comments/:commentID', auth_controller_2.authenti
 // Refresh after patching bookmark to update cookies with updated bookmark data (else refreshing
 // the site will load the outdated bookmark data into state)
 exports.resourceRouter.patch('/users/:userID', auth_controller_2.authenticateJWT, userController.toggleBookmark, auth_controller_1.refreshAccessToken);
+exports.resourceRouter.put('/users/:userID', auth_controller_2.authenticateJWT, auth_controller_1.authenticateSameUser, userController.changeUsername, userController.changeAvatarColour, auth_controller_1.refreshAccessToken);

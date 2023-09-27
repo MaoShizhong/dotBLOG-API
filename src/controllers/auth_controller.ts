@@ -1,4 +1,4 @@
-import { User, UserModel } from '../models/User';
+import { Colour, User, UserModel } from '../models/User';
 import { CookieOptions, NextFunction, Request, Response } from 'express';
 import expressAsyncHandler from 'express-async-handler';
 import { body, validationResult } from 'express-validator';
@@ -10,8 +10,10 @@ import { Comment } from '../models/Comment';
 import { Types } from 'mongoose';
 
 export interface AuthenticatedRequest extends Request {
+    _id: Types.ObjectId;
     user: UserModel;
     username: string;
+    avatar: Colour;
     bookmarks: Types.ObjectId[];
     isAuthor: boolean;
 }
@@ -73,6 +75,7 @@ const createNewUser: FormPOSTHandler = [
                 const user = new User({
                     name: (req.body.name as string) || undefined,
                     username: req.body.username as string,
+                    avatar: '#696869',
                     password: hashedPassword as string,
                     bookmarks: [] as Types.ObjectId[],
                     isAuthor: !!req.body.authorPassword,
@@ -153,7 +156,12 @@ const approveLogin = (req: Request, res: Response): void => {
 
     res.cookie('access', accessToken, { ...cookieOptions, maxAge: expiry.accessMS })
         .cookie('refresh', refreshToken, { ...cookieOptions, maxAge: expiry.refreshMS })
-        .json({ id: user._id, username: user.username, bookmarkedPosts: user.bookmarks });
+        .json({
+            id: user._id,
+            username: user.username,
+            avatar: user.avatar,
+            bookmarkedPosts: user.bookmarks,
+        });
 };
 
 const logout = (req: Request, res: Response): void => {
@@ -186,6 +194,7 @@ const authenticateJWT = (req: Request, res: Response, next: NextFunction): void 
         const decodedUser = jwt.verify(accessToken, ACCESS_TOKEN_SECRET) as JwtPayload;
 
         const request = req as AuthenticatedRequest;
+        request._id = decodedUser._id;
         request.username = decodedUser.username;
         request.isAuthor = decodedUser.isAuthor;
 
@@ -203,6 +212,16 @@ const authenticateAuthor = (req: Request, res: Response, next: NextFunction): vo
         res.status(401).json(UNAUTHORIZED);
     } else {
         next();
+    }
+};
+
+const authenticateSameUser = (req: Request, res: Response, next: NextFunction): void => {
+    const _id = (req as AuthenticatedRequest)._id;
+
+    if (_id.valueOf() === req.params.userID) {
+        next();
+    } else {
+        res.status(401).json(UNAUTHORIZED);
     }
 };
 
@@ -232,8 +251,16 @@ const refreshAccessToken = (req: Request, res: Response): void => {
     try {
         const decodedUser = jwt.verify(refreshToken, REFRESH_TOKEN_SECRET) as JwtPayload;
 
-        if ((req as AuthenticatedRequest).bookmarks) {
-            decodedUser.bookmarks = (req as AuthenticatedRequest).bookmarks;
+        const request = req as AuthenticatedRequest;
+
+        if (request.bookmarks) {
+            decodedUser.bookmarks = request.bookmarks;
+        }
+        if (request.username) {
+            decodedUser.username = request.username;
+        }
+        if (request.avatar) {
+            decodedUser.avatar = request.avatar;
         }
 
         const [newAccessToken, newRefreshToken] = generateTokens(
@@ -254,6 +281,7 @@ const refreshAccessToken = (req: Request, res: Response): void => {
             .json({
                 id: decodedUser._id,
                 username: decodedUser.username,
+                avatar: decodedUser.avatar,
                 bookmarkedPosts: decodedUser.bookmarks,
             });
     } catch (error) {
@@ -269,5 +297,6 @@ export {
     refreshAccessToken,
     authenticateJWT,
     authenticateAuthor,
+    authenticateSameUser,
     authenticateCommenter,
 };

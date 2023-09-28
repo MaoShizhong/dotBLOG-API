@@ -155,15 +155,21 @@ const deleteComment = expressAsyncHandler(async (req: Request, res: Response): P
         return;
     }
 
-    const deletedComment = await Comment.findByIdAndUpdate(req.params.commentID, {
-        text: '',
-        deleted: true,
-    }).exec();
+    const deletedComment = await Comment.findByIdAndUpdate(
+        req.params.commentID,
+        {
+            text: '',
+            deleted: true,
+        },
+        { new: true }
+    )
+        .populate('commenter', 'username avatar fontColour -_id')
+        .exec();
 
     if (!deletedComment) {
         res.status(404).json(DOES_NOT_EXIST);
     } else {
-        res.status(204).json(deletedComment);
+        res.json(deletedComment);
     }
 });
 

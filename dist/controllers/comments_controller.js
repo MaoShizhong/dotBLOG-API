@@ -142,12 +142,14 @@ const deleteComment = (0, express_async_handler_1.default)((req, res) => __await
     const deletedComment = yield Comment_1.Comment.findByIdAndUpdate(req.params.commentID, {
         text: '',
         deleted: true,
-    }).exec();
+    }, { new: true })
+        .populate('commenter', 'username avatar fontColour -_id')
+        .exec();
     if (!deletedComment) {
         res.status(404).json(posts_controller_1.DOES_NOT_EXIST);
     }
     else {
-        res.status(204).json(deletedComment);
+        res.json(deletedComment);
     }
 }));
 exports.deleteComment = deleteComment;

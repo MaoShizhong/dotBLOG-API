@@ -7,7 +7,7 @@ export const authRouter = Router();
     - Handle user accounts
 */
 authRouter.post(
-    '/signup',
+    '/user',
     authController.createNewUser,
     authController.attemptLogin,
     authController.approveLogin
@@ -17,11 +17,11 @@ authRouter.post(
     - Handle login
 */
 
-authRouter.post('/login', authController.attemptLogin, authController.approveLogin);
+authRouter.post('/tokens', authController.attemptLogin, authController.approveLogin);
 
-authRouter.get('/logout', authController.logout);
+authRouter.delete('/tokens', authController.logout);
 
 /*
     - Handle JWTs
 */
-authRouter.get('/refresh', authController.refreshAccessToken);
+authRouter.put('/tokens', authController.refreshAccessToken);

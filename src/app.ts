@@ -6,8 +6,10 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import { configDotenv } from 'dotenv';
 
-import { resourceRouter } from './routes/resource_router';
 import { authRouter } from './routes/auth_router';
+import { postRouter } from './routes/post_router';
+import { userRouter } from './routes/user_router';
+import { commentRouter } from './routes/comment_router';
 
 declare global {
     interface Error {
@@ -55,8 +57,10 @@ app.use(
     })
 );
 
-app.use('/', resourceRouter);
 app.use('/auth', authRouter);
+app.use('/posts', postRouter);
+app.use('/users', userRouter);
+app.use('/comments', commentRouter);
 
 /*
     - Listen

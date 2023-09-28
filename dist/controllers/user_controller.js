@@ -46,8 +46,10 @@ const toggleBookmark = (0, express_async_handler_1.default)((req, res, next) => 
 }));
 exports.toggleBookmark = toggleBookmark;
 const changeUsername = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    if (!req.query.username)
+    if (!req.query.username) {
         next();
+        return;
+    }
     const [currentUser, existingUsername] = yield Promise.all([
         User_1.User.findById(req.params.userID).exec(),
         User_1.User.findOne({ username: req.query.username }).exec(),
@@ -68,6 +70,7 @@ exports.changeUsername = changeUsername;
 const changeAvatarColour = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     if (!req.query.avatar) {
         next();
+        return;
     }
     else if (!/^[0-9A-F]{6}$/.test(req.query.avatar)) {
         res.status(400).json(posts_controller_1.INVALID_QUERY);
@@ -79,13 +82,13 @@ const changeAvatarColour = (0, express_async_handler_1.default)((req, res, next)
         avatar: colour,
         fontColour: fontColour,
     }).exec();
-    req.avatar = colour;
-    req.fontColour = fontColour;
+    const request = req;
+    request.avatar = colour;
+    request.fontColour = fontColour;
     next();
 }));
 exports.changeAvatarColour = changeAvatarColour;
 const deleteUser = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log('delete');
     const deletedUser = User_1.User.findByIdAndDelete(req.params.userID).exec();
     if (!deletedUser) {
         res.status(404).json(posts_controller_1.DOES_NOT_EXIST);

@@ -127,7 +127,7 @@ const attemptLogin = [
     })),
 ];
 exports.attemptLogin = attemptLogin;
-const approveLogin = (req, res) => {
+function approveLogin(req, res) {
     const user = req.user;
     const [accessToken, refreshToken] = (0, tokens_1.generateTokens)({
         user: user,
@@ -146,9 +146,9 @@ const approveLogin = (req, res) => {
         avatar: user.avatar,
         bookmarkedPosts: user.bookmarks,
     });
-};
+}
 exports.approveLogin = approveLogin;
-const logout = (req, res) => {
+function logout(req, res) {
     const cookies = req.cookies;
     if (!cookies.refresh && !cookies.access) {
         res.sendStatus(204);
@@ -159,12 +159,12 @@ const logout = (req, res) => {
         .json({
         message: 'Successful logout - cleared cookies',
     });
-};
+}
 exports.logout = logout;
 /*
     - JWTs/auth
 */
-const authenticateJWT = (req, res, next) => {
+function authenticateJWT(req, res, next) {
     var _a;
     const accessToken = (_a = req.cookies) === null || _a === void 0 ? void 0 : _a.access;
     if (!accessToken) {
@@ -183,9 +183,9 @@ const authenticateJWT = (req, res, next) => {
         console.error(error);
         res.status(403).json(exports.UNAUTHORIZED);
     }
-};
+}
 exports.authenticateJWT = authenticateJWT;
-const authenticateAuthor = (req, res, next) => {
+function authenticateAuthor(req, res, next) {
     const isAuthor = req === null || req === void 0 ? void 0 : req.isAuthor;
     if (!isAuthor) {
         res.status(401).json(exports.UNAUTHORIZED);
@@ -193,9 +193,9 @@ const authenticateAuthor = (req, res, next) => {
     else {
         next();
     }
-};
+}
 exports.authenticateAuthor = authenticateAuthor;
-const authenticateSameUser = (req, res, next) => {
+function authenticateSameUser(req, res, next) {
     const _id = req._id;
     if (_id.valueOf() === req.params.userID) {
         next();
@@ -203,7 +203,7 @@ const authenticateSameUser = (req, res, next) => {
     else {
         res.status(401).json(exports.UNAUTHORIZED);
     }
-};
+}
 exports.authenticateSameUser = authenticateSameUser;
 const authenticateCommenter = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const comment = yield Comment_1.Comment.findById(req.params.commentID)
@@ -218,7 +218,7 @@ const authenticateCommenter = (0, express_async_handler_1.default)((req, res, ne
     }
 }));
 exports.authenticateCommenter = authenticateCommenter;
-const refreshAccessToken = (req, res) => {
+function refreshAccessToken(req, res) {
     var _a;
     const refreshToken = (_a = req.cookies) === null || _a === void 0 ? void 0 : _a.refresh;
     if (!refreshToken) {
@@ -262,5 +262,5 @@ const refreshAccessToken = (req, res) => {
     catch (error) {
         res.status(401).json(exports.UNAUTHORIZED);
     }
-};
+}
 exports.refreshAccessToken = refreshAccessToken;

@@ -37,7 +37,10 @@ const toggleBookmark = expressAsyncHandler(
 
 const changeUsername = expressAsyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        if (!req.query.username) next();
+        if (!req.query.username) {
+            next();
+            return;
+        }
 
         const [currentUser, existingUsername] = await Promise.all([
             User.findById(req.params.userID).exec(),
@@ -50,6 +53,7 @@ const changeUsername = expressAsyncHandler(
             res.status(403).json({ message: 'Username already taken' });
         } else {
             await User.findByIdAndUpdate(req.params.userID, { username: req.query.username });
+
             (req as AuthenticatedRequest).username = req.query.username as string;
             next();
         }
@@ -60,6 +64,7 @@ const changeAvatarColour = expressAsyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         if (!req.query.avatar) {
             next();
+            return;
         } else if (!/^[0-9A-F]{6}$/.test(req.query.avatar as string)) {
             res.status(400).json(INVALID_QUERY);
             return;
@@ -73,15 +78,15 @@ const changeAvatarColour = expressAsyncHandler(
             fontColour: fontColour,
         }).exec();
 
-        (req as AuthenticatedRequest).avatar = colour;
-        (req as AuthenticatedRequest).fontColour = fontColour;
+        const request = req as AuthenticatedRequest;
+        request.avatar = colour;
+        request.fontColour = fontColour;
         next();
     }
 );
 
 const deleteUser = expressAsyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        console.log('delete');
         const deletedUser = User.findByIdAndDelete(req.params.userID).exec();
 
         if (!deletedUser) {

@@ -78,7 +78,7 @@ const getBookmarkedPosts = expressAsyncHandler(
 );
 
 /*
-    - POST
+- POST
 */
 const postNewPost: FormPOSTHandler = [
     body('title', 'Title must not be empty').trim().notEmpty().escape(),
@@ -147,8 +147,12 @@ const postNewPost: FormPOSTHandler = [
     }),
 ];
 
+function removeDangerousScriptTags(text: string): string {
+    return text.replaceAll(/(<script>)|(<\/script>)|(?<=<script>)(.|\[^.])*(?=<\/script>)/g, '\n');
+}
+
 /*
-    - PUT
+- PUT
 */
 const editPost: FormPOSTHandler = [
     body('title', 'Title must not be empty').trim().notEmpty().escape(),
@@ -242,7 +246,7 @@ const toggleFeaturedPublished = expressAsyncHandler(
     }
 );
 
-const togglePublish = async (req: Request): Promise<Array<PostModel | null>> => {
+async function togglePublish(req: Request): Promise<Array<PostModel | null>> {
     const editedPost = await Post.findByIdAndUpdate(
         req.params.postID,
         { isPublished: req.query.publish === 'true' },
@@ -256,9 +260,9 @@ const togglePublish = async (req: Request): Promise<Array<PostModel | null>> => 
     } else {
         return [null, null];
     }
-};
+}
 
-const toggleFeature = async (req: Request): Promise<Array<PostModel | PostModel[] | null>> => {
+async function toggleFeature(req: Request): Promise<Array<PostModel | PostModel[] | null>> {
     const [editedPost, existingFeaturedPosts] = await Promise.all([
         Post.findByIdAndUpdate(
             req.params.postID,
@@ -277,7 +281,7 @@ const toggleFeature = async (req: Request): Promise<Array<PostModel | PostModel[
     } else {
         return [editedPost, null];
     }
-};
+}
 
 /*
     - DELETE
@@ -296,10 +300,6 @@ const deletePost = expressAsyncHandler(async (req: Request, res: Response): Prom
         res.status(204).json(deletedPost);
     }
 });
-
-function removeDangerousScriptTags(text: string): string {
-    return text.replaceAll(/(<script>)|(<\/script>)|(?<=<script>)(.|\[^.])*(?=<\/script>)/g, '\n');
-}
 
 export {
     INVALID_ID,

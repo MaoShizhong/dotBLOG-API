@@ -23,20 +23,24 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.authRouter = void 0;
+exports.postRouter = void 0;
 const express_1 = require("express");
+const postsController = __importStar(require("../controllers/posts_controller"));
+const commentsController = __importStar(require("../controllers/comments_controller"));
 const authController = __importStar(require("../controllers/auth_controller"));
-exports.authRouter = (0, express_1.Router)();
+exports.postRouter = (0, express_1.Router)();
 /*
-    - Handle user accounts
+    - Handle posts
 */
-exports.authRouter.post('/user', authController.createNewUser, authController.attemptLogin, authController.approveLogin);
+exports.postRouter.get('/', postsController.getAllPosts);
+exports.postRouter.get('/:postID', postsController.getSpecificPost);
+exports.postRouter.post('/', authController.authenticateJWT, authController.authenticateAuthor, postsController.postNewPost);
+exports.postRouter.put('/:postID', authController.authenticateJWT, authController.authenticateAuthor, postsController.editPost);
+// For setting an unpublished post to published only
+exports.postRouter.patch('/:postID', authController.authenticateJWT, authController.authenticateAuthor, postsController.toggleFeaturedPublished);
+exports.postRouter.delete('/:postID', authController.authenticateJWT, authController.authenticateAuthor, postsController.deletePost);
 /*
-    - Handle login
+    - Handle comments on a post
 */
-exports.authRouter.post('/tokens', authController.attemptLogin, authController.approveLogin);
-exports.authRouter.delete('/tokens', authController.logout);
-/*
-    - Handle JWTs
-*/
-exports.authRouter.put('/tokens', authController.refreshAccessToken);
+exports.postRouter.get('/:postID/comments', commentsController.getAllComments);
+exports.postRouter.post('/:postID/comments', authController.authenticateJWT, commentsController.postNewComment);

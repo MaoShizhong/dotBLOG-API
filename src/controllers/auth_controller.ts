@@ -143,7 +143,7 @@ const attemptLogin: FormPOSTHandler = [
     }),
 ];
 
-const approveLogin = (req: Request, res: Response): void => {
+function approveLogin(req: Request, res: Response): void {
     const user = (req as AuthenticatedRequest).user;
 
     const [accessToken, refreshToken] = generateTokens(
@@ -167,9 +167,9 @@ const approveLogin = (req: Request, res: Response): void => {
             avatar: user.avatar,
             bookmarkedPosts: user.bookmarks,
         });
-};
+}
 
-const logout = (req: Request, res: Response): void => {
+function logout(req: Request, res: Response): void {
     const cookies = req.cookies;
 
     if (!cookies.refresh && !cookies.access) {
@@ -182,12 +182,12 @@ const logout = (req: Request, res: Response): void => {
         .json({
             message: 'Successful logout - cleared cookies',
         });
-};
+}
 
 /*
     - JWTs/auth
 */
-const authenticateJWT = (req: Request, res: Response, next: NextFunction): void => {
+function authenticateJWT(req: Request, res: Response, next: NextFunction): void {
     const accessToken: string | undefined = req.cookies?.access;
 
     if (!accessToken) {
@@ -208,9 +208,9 @@ const authenticateJWT = (req: Request, res: Response, next: NextFunction): void 
         console.error(error);
         res.status(403).json(UNAUTHORIZED);
     }
-};
+}
 
-const authenticateAuthor = (req: Request, res: Response, next: NextFunction): void => {
+function authenticateAuthor(req: Request, res: Response, next: NextFunction): void {
     const isAuthor = (req as AuthenticatedRequest)?.isAuthor;
 
     if (!isAuthor) {
@@ -218,9 +218,9 @@ const authenticateAuthor = (req: Request, res: Response, next: NextFunction): vo
     } else {
         next();
     }
-};
+}
 
-const authenticateSameUser = (req: Request, res: Response, next: NextFunction): void => {
+function authenticateSameUser(req: Request, res: Response, next: NextFunction): void {
     const _id = (req as AuthenticatedRequest)._id;
 
     if (_id.valueOf() === req.params.userID) {
@@ -228,7 +228,7 @@ const authenticateSameUser = (req: Request, res: Response, next: NextFunction): 
     } else {
         res.status(401).json(UNAUTHORIZED);
     }
-};
+}
 
 const authenticateCommenter = expressAsyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -245,7 +245,7 @@ const authenticateCommenter = expressAsyncHandler(
     }
 );
 
-const refreshAccessToken = (req: Request, res: Response): void => {
+function refreshAccessToken(req: Request, res: Response): void {
     const refreshToken: string | undefined = req.cookies?.refresh;
 
     if (!refreshToken) {
@@ -296,7 +296,7 @@ const refreshAccessToken = (req: Request, res: Response): void => {
     } catch (error) {
         res.status(401).json(UNAUTHORIZED);
     }
-};
+}
 
 export {
     createNewUser,

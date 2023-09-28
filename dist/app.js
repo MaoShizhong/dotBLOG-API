@@ -18,8 +18,10 @@ const morgan_1 = __importDefault(require("morgan"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = require("dotenv");
-const resource_router_1 = require("./routes/resource_router");
 const auth_router_1 = require("./routes/auth_router");
+const post_router_1 = require("./routes/post_router");
+const user_router_1 = require("./routes/user_router");
+const comment_router_1 = require("./routes/comment_router");
 const app = (0, express_1.default)();
 (0, dotenv_1.configDotenv)();
 /*
@@ -54,8 +56,10 @@ app.use((0, cors_1.default)({
     credentials: true,
     exposedHeaders: 'Authorization',
 }));
-app.use('/', resource_router_1.resourceRouter);
 app.use('/auth', auth_router_1.authRouter);
+app.use('/posts', post_router_1.postRouter);
+app.use('/users', user_router_1.userRouter);
+app.use('/comments', comment_router_1.commentRouter);
 /*
     - Listen
 */

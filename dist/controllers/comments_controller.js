@@ -153,7 +153,6 @@ const deleteComment = (0, express_async_handler_1.default)((req, res) => __await
 exports.deleteComment = deleteComment;
 // All user comments upon account deletion
 const deleteUserComments = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log('deleted all user comments');
     yield Comment_1.Comment.updateMany({ commenter: req.params.userID }, { text: '', deleted: true }).exec();
     next();
 }));

@@ -23,20 +23,14 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.authRouter = void 0;
+exports.commentRouter = void 0;
 const express_1 = require("express");
+const commentsController = __importStar(require("../controllers/comments_controller"));
 const authController = __importStar(require("../controllers/auth_controller"));
-exports.authRouter = (0, express_1.Router)();
+exports.commentRouter = (0, express_1.Router)();
 /*
-    - Handle user accounts
+    - Handle specfic comments
 */
-exports.authRouter.post('/user', authController.createNewUser, authController.attemptLogin, authController.approveLogin);
-/*
-    - Handle login
-*/
-exports.authRouter.post('/tokens', authController.attemptLogin, authController.approveLogin);
-exports.authRouter.delete('/tokens', authController.logout);
-/*
-    - Handle JWTs
-*/
-exports.authRouter.put('/tokens', authController.refreshAccessToken);
+exports.commentRouter.get('/:commentID', commentsController.getSpecificComment);
+exports.commentRouter.put('/:commentID', authController.authenticateJWT, authController.authenticateCommenter, commentsController.editComment);
+exports.commentRouter.delete('/:commentID', authController.authenticateJWT, authController.authenticateCommenter, commentsController.deleteComment);

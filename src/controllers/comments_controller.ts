@@ -170,8 +170,6 @@ const deleteComment = expressAsyncHandler(async (req: Request, res: Response): P
 // All user comments upon account deletion
 const deleteUserComments = expressAsyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        console.log('deleted all user comments');
-
         await Comment.updateMany(
             { commenter: req.params.userID },
             { text: '', deleted: true }

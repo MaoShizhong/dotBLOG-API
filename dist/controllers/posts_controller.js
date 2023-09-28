@@ -86,7 +86,7 @@ const getBookmarkedPosts = (0, express_async_handler_1.default)((req, res) => __
 }));
 exports.getBookmarkedPosts = getBookmarkedPosts;
 /*
-    - POST
+- POST
 */
 const postNewPost = [
     (0, express_validator_1.body)('title', 'Title must not be empty').trim().notEmpty().escape(),
@@ -144,8 +144,12 @@ const postNewPost = [
     })),
 ];
 exports.postNewPost = postNewPost;
+function removeDangerousScriptTags(text) {
+    return text.replaceAll(/(<script>)|(<\/script>)|(?<=<script>)(.|\[^.])*(?=<\/script>)/g, '\n');
+}
+exports.removeDangerousScriptTags = removeDangerousScriptTags;
 /*
-    - PUT
+- PUT
 */
 const editPost = [
     (0, express_validator_1.body)('title', 'Title must not be empty').trim().notEmpty().escape(),
@@ -223,34 +227,38 @@ const toggleFeaturedPublished = (0, express_async_handler_1.default)((req, res) 
     }
 }));
 exports.toggleFeaturedPublished = toggleFeaturedPublished;
-const togglePublish = (req) => __awaiter(void 0, void 0, void 0, function* () {
-    const editedPost = yield Post_1.Post.findByIdAndUpdate(req.params.postID, { isPublished: req.query.publish === 'true' }, { new: true })
-        .populate('author', 'name -_id')
-        .exec();
-    if (editedPost) {
-        return [editedPost, null];
-    }
-    else {
-        return [null, null];
-    }
-});
-const toggleFeature = (req) => __awaiter(void 0, void 0, void 0, function* () {
-    const [editedPost, existingFeaturedPosts] = yield Promise.all([
-        Post_1.Post.findByIdAndUpdate(req.params.postID, { isFeatured: req.query.feature === 'true' }, { new: true })
+function togglePublish(req) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const editedPost = yield Post_1.Post.findByIdAndUpdate(req.params.postID, { isPublished: req.query.publish === 'true' }, { new: true })
             .populate('author', 'name -_id')
-            .exec(),
-        Post_1.Post.find({ _id: { $ne: req.params.postID }, isFeatured: true }).exec(),
-    ]);
-    if (!editedPost) {
-        return [null, null];
-    }
-    else if (req.query.feature === 'true') {
-        return [editedPost, existingFeaturedPosts];
-    }
-    else {
-        return [editedPost, null];
-    }
-});
+            .exec();
+        if (editedPost) {
+            return [editedPost, null];
+        }
+        else {
+            return [null, null];
+        }
+    });
+}
+function toggleFeature(req) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const [editedPost, existingFeaturedPosts] = yield Promise.all([
+            Post_1.Post.findByIdAndUpdate(req.params.postID, { isFeatured: req.query.feature === 'true' }, { new: true })
+                .populate('author', 'name -_id')
+                .exec(),
+            Post_1.Post.find({ _id: { $ne: req.params.postID }, isFeatured: true }).exec(),
+        ]);
+        if (!editedPost) {
+            return [null, null];
+        }
+        else if (req.query.feature === 'true') {
+            return [editedPost, existingFeaturedPosts];
+        }
+        else {
+            return [editedPost, null];
+        }
+    });
+}
 /*
     - DELETE
 */
@@ -268,7 +276,3 @@ const deletePost = (0, express_async_handler_1.default)((req, res) => __awaiter(
     }
 }));
 exports.deletePost = deletePost;
-function removeDangerousScriptTags(text) {
-    return text.replaceAll(/(<script>)|(<\/script>)|(?<=<script>)(.|\[^.])*(?=<\/script>)/g, '\n');
-}
-exports.removeDangerousScriptTags = removeDangerousScriptTags;

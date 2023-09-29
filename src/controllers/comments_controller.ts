@@ -185,6 +185,15 @@ const deleteUserComments = expressAsyncHandler(
     }
 );
 
+// All user comments upon account deletion
+const destroyPostComments = expressAsyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
+        await Comment.deleteMany({ post: req.params.postID }).exec();
+
+        res.json({ message: 'Post and associated comments deleted' });
+    }
+);
+
 export {
     getAllComments,
     getSpecificComment,
@@ -192,4 +201,5 @@ export {
     editComment,
     deleteComment,
     deleteUserComments,
+    destroyPostComments,
 };

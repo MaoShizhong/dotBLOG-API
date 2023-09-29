@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import { categories, Category, objectFits, Post, PostModel } from '../models/Post';
 import expressAsyncHandler from 'express-async-handler';
@@ -286,20 +286,22 @@ async function toggleFeature(req: Request): Promise<Array<PostModel | PostModel[
 /*
     - DELETE
 */
-const deletePost = expressAsyncHandler(async (req: Request, res: Response): Promise<void> => {
-    if (!Types.ObjectId.isValid(req.params.postID)) {
-        res.status(400).json(INVALID_ID);
-        return;
-    }
+const deletePost = expressAsyncHandler(
+    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+        if (!Types.ObjectId.isValid(req.params.postID)) {
+            res.status(400).json(INVALID_ID);
+            return;
+        }
 
-    const deletedPost = await Post.findByIdAndDelete(req.params.postID).exec();
+        const deletedPost = await Post.findByIdAndDelete(req.params.postID).exec();
 
-    if (!deletedPost) {
-        res.status(404).json(DOES_NOT_EXIST);
-    } else {
-        res.status(204).json(deletedPost);
+        if (!deletedPost) {
+            res.status(404).json(DOES_NOT_EXIST);
+        } else {
+            next();
+        }
     }
-});
+);
 
 export {
     INVALID_ID,

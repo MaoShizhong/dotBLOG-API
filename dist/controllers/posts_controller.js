@@ -262,7 +262,7 @@ function toggleFeature(req) {
 /*
     - DELETE
 */
-const deletePost = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const deletePost = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     if (!mongoose_1.Types.ObjectId.isValid(req.params.postID)) {
         res.status(400).json(INVALID_ID);
         return;
@@ -272,7 +272,7 @@ const deletePost = (0, express_async_handler_1.default)((req, res) => __awaiter(
         res.status(404).json(DOES_NOT_EXIST);
     }
     else {
-        res.status(204).json(deletedPost);
+        next();
     }
 }));
 exports.deletePost = deletePost;

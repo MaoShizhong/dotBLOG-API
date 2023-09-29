@@ -39,7 +39,8 @@ postRouter.delete(
     '/:postID',
     authController.authenticateJWT,
     authController.authenticateAuthor,
-    postsController.deletePost
+    postsController.deletePost,
+    commentsController.destroyPostComments
 );
 
 /*

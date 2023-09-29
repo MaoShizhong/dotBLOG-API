@@ -38,7 +38,7 @@ exports.postRouter.post('/', authController.authenticateJWT, authController.auth
 exports.postRouter.put('/:postID', authController.authenticateJWT, authController.authenticateAuthor, postsController.editPost);
 // For setting an unpublished post to published only
 exports.postRouter.patch('/:postID', authController.authenticateJWT, authController.authenticateAuthor, postsController.toggleFeaturedPublished);
-exports.postRouter.delete('/:postID', authController.authenticateJWT, authController.authenticateAuthor, postsController.deletePost);
+exports.postRouter.delete('/:postID', authController.authenticateJWT, authController.authenticateAuthor, postsController.deletePost, commentsController.destroyPostComments);
 /*
     - Handle comments on a post
 */

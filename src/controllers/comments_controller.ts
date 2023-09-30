@@ -5,6 +5,7 @@ import { Types } from 'mongoose';
 import { Comment, CommentModel } from '../models/Comment';
 import { INVALID_ID, DOES_NOT_EXIST, removeDangerousScriptTags } from './posts_controller';
 import { Post } from '../models/Post';
+import { deepPopulateFromLevelOne, deepPopulateFromLevelTwo } from '../population/populate_options';
 
 type Query = {
     post?: string;
@@ -18,12 +19,15 @@ const DATABASE_UPDATE_ERROR = { message: 'Error updating database' };
 */
 const getAllComments = expressAsyncHandler(async (req: Request, res: Response): Promise<void> => {
     const searchFilter: Query = {
-        ...(req.params.postID && { post: req.params.postID }),
+        ...(req.params.postID && { post: req.params.postID, isReply: false }),
         ...(req.params.readerID && { commenter: req.params.readerID }),
     };
 
+    // get all comments and 2 levels of replies
+    // (default view - user can manually expand to fetch further comment levels)
     const allComments = await Comment.find(searchFilter)
         .populate('commenter', 'username avatar fontColour -_id')
+        .populate(deepPopulateFromLevelOne)
         .sort({ timestamp: -1 })
         .exec();
 
@@ -49,6 +53,26 @@ const getSpecificComment = expressAsyncHandler(
     }
 );
 
+const getCommentReplies = expressAsyncHandler(
+    async (req: Request, res: Response): Promise<void> => {
+        if (!Types.ObjectId.isValid(req.params.commentID)) {
+            res.status(400).json(INVALID_ID);
+            return;
+        }
+
+        const commentWithReplies = await Comment.findById(req.params.commentID)
+            .populate('commenter', 'username avatar fontColour -_id')
+            .populate(deepPopulateFromLevelTwo)
+            .exec();
+
+        if (!commentWithReplies) {
+            res.status(404).json(DOES_NOT_EXIST);
+        } else {
+            res.json(commentWithReplies);
+        }
+    }
+);
+
 /*
     - POST
 */
@@ -63,7 +87,7 @@ const postNewComment: FormPOSTHandler = [
         const errors = validationResult(req);
 
         if (!errors.isEmpty()) {
-            res.json({
+            res.status(400).json({
                 errors: errors.array(),
             });
         } else {
@@ -75,6 +99,7 @@ const postNewComment: FormPOSTHandler = [
                 text: req.body.text as string,
                 replies: [],
                 deleted: false,
+                isReply: !!req.query.parent,
             });
 
             const [savedComment, updatedPost] = await Promise.all([
@@ -86,13 +111,36 @@ const postNewComment: FormPOSTHandler = [
                 ).exec(),
             ]);
 
-            await savedComment.populate('commenter', 'username avatar fontColour -_id');
+            // If new comment is a reply to another comment, push its _id to the parent's replies array
+            if (req.query.parent) {
+                const [commentRepliedOn] = await Promise.all([
+                    Comment.findByIdAndUpdate(
+                        req.query.parent,
+                        {
+                            $push: { replies: savedComment._id },
+                        },
+                        { new: true }
+                    )
+                        .populate('commenter', 'username  avatar fontColour -_id')
+                        .populate(deepPopulateFromLevelTwo)
+                        .exec(),
+                    savedComment.populate('commenter', 'username avatar fontColour -_id'),
+                ]);
 
-            if (savedComment && updatedPost) {
-                res.status(201).json(savedComment);
+                if (commentRepliedOn) {
+                    res.json(commentRepliedOn);
+                    return;
+                }
             } else {
-                res.status(500).json(DATABASE_UPDATE_ERROR);
+                await savedComment.populate('commenter', 'username avatar fontColour -_id');
+
+                if (savedComment && updatedPost) {
+                    res.json(savedComment);
+                    return;
+                }
             }
+
+            res.status(500).json(DATABASE_UPDATE_ERROR);
         }
     }),
 ];
@@ -131,6 +179,7 @@ const editComment: FormPOSTHandler = [
                     text: req.body.text as string,
                     replies: existingComment.replies,
                     deleted: false,
+                    isReply: existingComment.isReply,
                 });
 
                 const editedComment = await Comment.findByIdAndUpdate(
@@ -169,6 +218,13 @@ const deleteComment = expressAsyncHandler(async (req: Request, res: Response): P
     if (!deletedComment) {
         res.status(404).json(DOES_NOT_EXIST);
     } else {
+        // Retain populate level else cannot display comment details
+        if (req.query.level === '1' || req.query.level === '2') {
+            await deletedComment.populate(
+                req.query.level === '1' ? deepPopulateFromLevelOne : deepPopulateFromLevelTwo
+            );
+        }
+
         res.json(deletedComment);
     }
 });
@@ -197,6 +253,7 @@ const destroyPostComments = expressAsyncHandler(
 export {
     getAllComments,
     getSpecificComment,
+    getCommentReplies,
     postNewComment,
     editComment,
     deleteComment,

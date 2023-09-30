@@ -8,6 +8,7 @@ export type CommentModel = {
     text: string;
     replies: Types.ObjectId[];
     deleted: boolean;
+    isReply: boolean;
 };
 
 const CommentSchema = new Schema<CommentModel>(
@@ -16,8 +17,9 @@ const CommentSchema = new Schema<CommentModel>(
         post: { type: Schema.Types.ObjectId, ref: 'post', required: true },
         timestamp: { type: Date, required: true },
         text: { type: String, required: true },
-        replies: [{ type: Schema.Types.ObjectId, rel: 'Comment' }],
+        replies: [{ type: Schema.Types.ObjectId, ref: 'comment' }],
         deleted: { type: Boolean, default: false, required: true },
+        isReply: { type: Boolean, default: false, required: true },
     },
     { versionKey: false }
 );

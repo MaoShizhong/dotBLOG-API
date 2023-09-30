@@ -9,16 +9,18 @@ export const commentRouter = Router();
 */
 commentRouter.get('/:commentID', commentsController.getSpecificComment);
 
+commentRouter.get('/:commentID/replies', commentsController.getCommentReplies);
+
 commentRouter.put(
     '/:commentID',
     authController.authenticateJWT,
-    authController.authenticateCommenter,
+    authController.authenticateSameCommenter,
     commentsController.editComment
 );
 
 commentRouter.delete(
     '/:commentID',
     authController.authenticateJWT,
-    authController.authenticateCommenter,
+    authController.authenticateSameCommenter,
     commentsController.deleteComment
 );

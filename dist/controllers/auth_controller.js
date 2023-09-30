@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.authenticateCommenter = exports.authenticateSameUser = exports.authenticateAuthor = exports.authenticateJWT = exports.refreshAccessToken = exports.logout = exports.approveLogin = exports.attemptLogin = exports.createNewUser = exports.cmsOrigins = exports.UNAUTHORIZED = void 0;
+exports.authenticateSameCommenter = exports.authenticateSameUser = exports.authenticateAuthor = exports.authenticateJWT = exports.refreshAccessToken = exports.logout = exports.approveLogin = exports.attemptLogin = exports.createNewUser = exports.cmsOrigins = exports.UNAUTHORIZED = void 0;
 const User_1 = require("../models/User");
 const express_async_handler_1 = __importDefault(require("express-async-handler"));
 const express_validator_1 = require("express-validator");
@@ -205,7 +205,7 @@ function authenticateSameUser(req, res, next) {
     }
 }
 exports.authenticateSameUser = authenticateSameUser;
-const authenticateCommenter = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+const authenticateSameCommenter = (0, express_async_handler_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const comment = yield Comment_1.Comment.findById(req.params.commentID)
         .populate('commenter', 'username -_id')
         .exec();
@@ -217,7 +217,7 @@ const authenticateCommenter = (0, express_async_handler_1.default)((req, res, ne
         res.status(401).json(exports.UNAUTHORIZED);
     }
 }));
-exports.authenticateCommenter = authenticateCommenter;
+exports.authenticateSameCommenter = authenticateSameCommenter;
 function refreshAccessToken(req, res) {
     var _a;
     const refreshToken = (_a = req.cookies) === null || _a === void 0 ? void 0 : _a.refresh;

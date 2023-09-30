@@ -32,5 +32,6 @@ exports.commentRouter = (0, express_1.Router)();
     - Handle specfic comments
 */
 exports.commentRouter.get('/:commentID', commentsController.getSpecificComment);
-exports.commentRouter.put('/:commentID', authController.authenticateJWT, authController.authenticateCommenter, commentsController.editComment);
-exports.commentRouter.delete('/:commentID', authController.authenticateJWT, authController.authenticateCommenter, commentsController.deleteComment);
+exports.commentRouter.get('/:commentID/replies', commentsController.getCommentReplies);
+exports.commentRouter.put('/:commentID', authController.authenticateJWT, authController.authenticateSameCommenter, commentsController.editComment);
+exports.commentRouter.delete('/:commentID', authController.authenticateJWT, authController.authenticateSameCommenter, commentsController.deleteComment);

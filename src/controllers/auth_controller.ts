@@ -230,7 +230,7 @@ function authenticateSameUser(req: Request, res: Response, next: NextFunction): 
     }
 }
 
-const authenticateCommenter = expressAsyncHandler(
+const authenticateSameCommenter = expressAsyncHandler(
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         const comment = await Comment.findById(req.params.commentID)
             .populate<{ commenter: UserModel }>('commenter', 'username -_id')
@@ -307,5 +307,5 @@ export {
     authenticateJWT,
     authenticateAuthor,
     authenticateSameUser,
-    authenticateCommenter,
+    authenticateSameCommenter,
 };

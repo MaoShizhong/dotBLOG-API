@@ -12,21 +12,25 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.destroyPostComments = exports.deleteUserComments = exports.deleteComment = exports.editComment = exports.postNewComment = exports.getSpecificComment = exports.getAllComments = void 0;
+exports.destroyPostComments = exports.deleteUserComments = exports.deleteComment = exports.editComment = exports.postNewComment = exports.getCommentReplies = exports.getSpecificComment = exports.getAllComments = void 0;
 const express_async_handler_1 = __importDefault(require("express-async-handler"));
 const express_validator_1 = require("express-validator");
 const mongoose_1 = require("mongoose");
 const Comment_1 = require("../models/Comment");
 const posts_controller_1 = require("./posts_controller");
 const Post_1 = require("../models/Post");
+const populate_options_1 = require("../population/populate_options");
 const DATABASE_UPDATE_ERROR = { message: 'Error updating database' };
 /*
     - GET
 */
 const getAllComments = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const searchFilter = Object.assign(Object.assign({}, (req.params.postID && { post: req.params.postID })), (req.params.readerID && { commenter: req.params.readerID }));
+    const searchFilter = Object.assign(Object.assign({}, (req.params.postID && { post: req.params.postID, isReply: false })), (req.params.readerID && { commenter: req.params.readerID }));
+    // get all comments and 2 levels of replies
+    // (default view - user can manually expand to fetch further comment levels)
     const allComments = yield Comment_1.Comment.find(searchFilter)
         .populate('commenter', 'username avatar fontColour -_id')
+        .populate(populate_options_1.deepPopulateFromLevelOne)
         .sort({ timestamp: -1 })
         .exec();
     res.json(allComments);
@@ -48,6 +52,23 @@ const getSpecificComment = (0, express_async_handler_1.default)((req, res) => __
     }
 }));
 exports.getSpecificComment = getSpecificComment;
+const getCommentReplies = (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!mongoose_1.Types.ObjectId.isValid(req.params.commentID)) {
+        res.status(400).json(posts_controller_1.INVALID_ID);
+        return;
+    }
+    const commentWithReplies = yield Comment_1.Comment.findById(req.params.commentID)
+        .populate('commenter', 'username avatar fontColour -_id')
+        .populate(populate_options_1.deepPopulateFromLevelTwo)
+        .exec();
+    if (!commentWithReplies) {
+        res.status(404).json(posts_controller_1.DOES_NOT_EXIST);
+    }
+    else {
+        res.json(commentWithReplies);
+    }
+}));
+exports.getCommentReplies = getCommentReplies;
 /*
     - POST
 */
@@ -60,7 +81,7 @@ const postNewComment = [
     (0, express_async_handler_1.default)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const errors = (0, express_validator_1.validationResult)(req);
         if (!errors.isEmpty()) {
-            res.json({
+            res.status(400).json({
                 errors: errors.array(),
             });
         }
@@ -73,18 +94,36 @@ const postNewComment = [
                 text: req.body.text,
                 replies: [],
                 deleted: false,
+                isReply: !!req.query.parent,
             });
             const [savedComment, updatedPost] = yield Promise.all([
                 comment.save(),
                 Post_1.Post.findOneAndUpdate({ _id: req.params.postID }, { $inc: { commentCount: 1 } }, { new: true }).exec(),
             ]);
-            yield savedComment.populate('commenter', 'username avatar fontColour -_id');
-            if (savedComment && updatedPost) {
-                res.status(201).json(savedComment);
+            // If new comment is a reply to another comment, push its _id to the parent's replies array
+            if (req.query.parent) {
+                const [commentRepliedOn] = yield Promise.all([
+                    Comment_1.Comment.findByIdAndUpdate(req.query.parent, {
+                        $push: { replies: savedComment._id },
+                    }, { new: true })
+                        .populate('commenter', 'username  avatar fontColour -_id')
+                        .populate(populate_options_1.deepPopulateFromLevelTwo)
+                        .exec(),
+                    savedComment.populate('commenter', 'username avatar fontColour -_id'),
+                ]);
+                if (commentRepliedOn) {
+                    res.json(commentRepliedOn);
+                    return;
+                }
             }
             else {
-                res.status(500).json(DATABASE_UPDATE_ERROR);
+                yield savedComment.populate('commenter', 'username avatar fontColour -_id');
+                if (savedComment && updatedPost) {
+                    res.json(savedComment);
+                    return;
+                }
             }
+            res.status(500).json(DATABASE_UPDATE_ERROR);
         }
     })),
 ];
@@ -122,6 +161,7 @@ const editComment = [
                     text: req.body.text,
                     replies: existingComment.replies,
                     deleted: false,
+                    isReply: existingComment.isReply,
                 });
                 const editedComment = yield Comment_1.Comment.findByIdAndUpdate(req.params.commentID, commentWithEdits, { new: true });
                 res.json(editedComment);
@@ -149,6 +189,10 @@ const deleteComment = (0, express_async_handler_1.default)((req, res) => __await
         res.status(404).json(posts_controller_1.DOES_NOT_EXIST);
     }
     else {
+        // Retain populate level else cannot display comment details
+        if (req.query.level === '1' || req.query.level === '2') {
+            yield deletedComment.populate(req.query.level === '1' ? populate_options_1.deepPopulateFromLevelOne : populate_options_1.deepPopulateFromLevelTwo);
+        }
         res.json(deletedComment);
     }
 }));

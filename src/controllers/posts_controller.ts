@@ -66,7 +66,10 @@ const getBookmarkedPosts = expressAsyncHandler(
         }
 
         const user = await User.findById(req.params.userID)
-            .populate('bookmarks', '-text, -objectFit -isFeatured')
+            .populate({
+                path: 'bookmarks',
+                options: { projection: '-text, -objectFit -isFeatured', sort: { timestamp: -1 } },
+            })
             .exec();
 
         if (!user) {

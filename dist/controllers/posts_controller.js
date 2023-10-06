@@ -75,7 +75,10 @@ const getBookmarkedPosts = (0, express_async_handler_1.default)((req, res) => __
         return;
     }
     const user = yield User_1.User.findById(req.params.userID)
-        .populate('bookmarks', '-text, -objectFit -isFeatured')
+        .populate({
+        path: 'bookmarks',
+        options: { projection: '-text, -objectFit -isFeatured', sort: { timestamp: -1 } },
+    })
         .exec();
     if (!user) {
         res.status(404).json(DOES_NOT_EXIST);
